@@ -62,6 +62,31 @@ Sistema web para administrar clientes, catálogo, cotizaciones, estados, histori
 
    Abre `http://localhost:4200` e inicia sesión con el administrador configurado en `.env`.
 
+## Ejecución rápida de la demo
+
+Requisitos: Docker Desktop (o Docker Engine con Compose), Node.js según `backend/package.json` y conexión local libre en los puertos 3000, 4200 y 5433. Desde la carpeta raíz del repositorio, ejecuta:
+
+```sh
+npm run demo
+```
+
+En el primer inicio, el comando crea `.demo/.env` tomando la estructura de `.env.example`, instala dependencias si faltan, inicia una base PostgreSQL aislada en el puerto 5433, espera su disponibilidad, aplica migraciones y carga el administrador inicial y los datos de demostración. Después arranca API y aplicación web juntos. Abre `http://localhost:4200` y accede con:
+
+| Campo | Valor |
+| --- | --- |
+| Usuario administrador | `admin@teknopipe.test` |
+| Contraseña de demo | `DemoPipe2026Admin` |
+
+Estas credenciales son exclusivamente para la base local de demostración; no las uses fuera de ese entorno. Swagger UI está disponible en `http://localhost:3000/api-docs/`. El seed de demostración es independiente del seed inicial e idempotente: incluye cinco categorías, quince productos, seis clientes y doce cotizaciones distribuidas entre estados y meses. Los registros usan información ficticia y neutra.
+
+Detén API, aplicación web y PostgreSQL con:
+
+```sh
+npm run demo:stop
+```
+
+La base y sus datos permanecen en el volumen local para el siguiente inicio. `.demo/` guarda la configuración y los registros de ejecución y está excluida de Git. Para iniciar con una base vacía, detén el entorno y elimina únicamente su volumen `teknopipe-demo_postgres_data` con Docker; el siguiente `npm run demo` volverá a aplicar las migraciones y ambos seeds.
+
 ## Comandos útiles
 
 Desde `backend/`:
