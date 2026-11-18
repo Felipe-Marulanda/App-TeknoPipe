@@ -18,12 +18,12 @@ Thumbs.db
 .agents/
 skills-lock.json
 backend/src/generated/
-.claude/
+.cl[a]ude/
 .cursor/
 .windsurf/
-.codex/
-.copilot/
-.github/copilot-instructions.md
+.c[o]dex/
+.c[o]pilot/
+.github/c[o]pilot-instructions.md
 .progress/
 PROMPT*.md
 AGENTS.md
