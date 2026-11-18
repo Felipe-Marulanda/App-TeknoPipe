@@ -16,6 +16,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
+    "prisma:seed:demo": "tsx prisma/demo-seed.ts",
     "db:check": "prisma db execute --stdin"
   },
   "engines": {
