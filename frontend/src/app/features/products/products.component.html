@@ -1,0 +1,191 @@
+<section class="feature-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Catálogo técnico</p>
+      <h1>Productos</h1>
+      <p class="page-description">Referencias y precios usados al preparar cada cotización.</p>
+    </div>
+    @if (isAdministrator()) {
+      <button class="button button-primary" type="button" (click)="openCreate()">
+        <app-icon name="plus" />
+        Nuevo producto
+      </button>
+    }
+  </header>
+
+  <form class="list-toolbar" [formGroup]="filters" (ngSubmit)="search()">
+    <label class="search-control">
+      <app-icon name="search" />
+      <span class="sr-only">Buscar productos</span>
+      <input formControlName="search" type="search" placeholder="Buscar por referencia o nombre" autocomplete="off" />
+    </label>
+    <label class="filter-control filter-wide">
+      <span class="sr-only">Filtrar por categoría</span>
+      <select class="field-control" formControlName="categoryId" (change)="changeFilter()">
+        <option value="all">Todas las categorías</option>
+        @for (category of categories(); track category.id) {
+          <option [value]="category.id">{{ category.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="filter-control">
+      <span class="sr-only">Filtrar por estado</span>
+      <select class="field-control" formControlName="active" (change)="changeFilter()">
+        <option value="all">Todos</option>
+        <option value="true">Activos</option>
+        <option value="false">Inactivos</option>
+      </select>
+    </label>
+    <button class="button button-secondary" type="submit">Buscar</button>
+  </form>
+
+  @if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo completar la operación</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="search()">Intentar de nuevo</button>
+    </section>
+  }
+
+  @if (formOpen() && isAdministrator()) {
+    <section class="editor-panel" aria-labelledby="product-editor-title">
+      <header class="editor-heading">
+        <div>
+          <p class="eyebrow">{{ selected() ? 'Catálogo técnico' : 'Nuevo registro' }}</p>
+          <h2 id="product-editor-title">{{ selected() ? 'Editar producto' : 'Agregar producto' }}</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Cerrar formulario" (click)="closeForm()">
+          <app-icon name="close" />
+        </button>
+      </header>
+      @if (formError()) {
+        <p class="inline-error" role="alert">{{ formError() }}</p>
+      }
+      @if (selected()?.category && !selected()?.category?.active) {
+        <p class="inline-warning">
+          La categoría asignada está inactiva. Seleccione una categoría activa o «Sin categoría» para guardar.
+        </p>
+      }
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-grid product-form-grid">
+          <label class="field-label">
+            Referencia
+            <input class="field-control" formControlName="reference" maxlength="80" required />
+            @if (form.controls.reference.touched && form.controls.reference.invalid) {
+              <span class="field-error">Ingrese una referencia de hasta 80 caracteres.</span>
+            }
+          </label>
+          <label class="field-label">
+            Nombre del producto
+            <input class="field-control" formControlName="name" maxlength="200" required />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="field-error">El nombre del producto es obligatorio.</span>
+            }
+          </label>
+          <label class="field-label">
+            Categoría
+            <select class="field-control" formControlName="categoryId">
+              <option value="">Sin categoría</option>
+              @for (category of categories(); track category.id) {
+                <option [value]="category.id" [disabled]="!category.active">
+                  {{ category.name }}{{ category.active ? '' : ' (inactiva)' }}
+                </option>
+              }
+            </select>
+          </label>
+          <label class="field-label">
+            Unidad de medida
+            <input class="field-control" formControlName="unit" maxlength="40" required placeholder="Unidad, metro, kg…" />
+            @if (form.controls.unit.touched && form.controls.unit.invalid) {
+              <span class="field-error">Indique la unidad de medida.</span>
+            }
+          </label>
+          <label class="field-label">
+            Precio unitario (COP)
+            <input
+              class="field-control numeric-control"
+              formControlName="unitPrice"
+              inputmode="decimal"
+              placeholder="0.00"
+              required
+            />
+            @if (form.controls.unitPrice.touched && form.controls.unitPrice.invalid) {
+              <span class="field-error">Use hasta 12 enteros y máximo dos decimales.</span>
+            }
+          </label>
+          <label class="field-label">
+            Descripción
+            <textarea class="field-control" formControlName="description" maxlength="1000"></textarea>
+          </label>
+        </div>
+        <footer class="form-actions">
+          <button class="button button-quiet" type="button" (click)="closeForm()">Cancelar</button>
+          <button class="button button-primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Guardando…' : selected() ? 'Guardar cambios' : 'Crear producto' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  }
+
+  <section class="data-panel">
+    @if (loading()) {
+      <div class="table-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Cargando productos…</div>
+    } @else if (products().length === 0) {
+      <div class="table-state empty-state">
+        <span class="empty-pipe" aria-hidden="true"></span>
+        <h2>{{ filters.controls.search.value ? 'No encontramos coincidencias' : 'Aún no hay productos' }}</h2>
+        <p>Agregue referencias para reutilizarlas en sus cotizaciones.</p>
+        @if (!filters.controls.search.value && isAdministrator()) {
+          <button class="button button-secondary" type="button" (click)="openCreate()">Agregar producto</button>
+        }
+      </div>
+    } @else {
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Referencia / producto</th>
+              <th scope="col">Categoría</th>
+              <th scope="col">Unidad</th>
+              <th scope="col" class="numeric">Precio unitario</th>
+              <th scope="col">Estado</th>
+              @if (isAdministrator()) {
+                <th scope="col"><span class="sr-only">Acciones</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of products(); track product.id) {
+              <tr>
+                <td>
+                  <span class="table-primary">{{ product.name }}</span>
+                  <span class="table-secondary numeric">{{ product.reference }}</span>
+                </td>
+                <td>{{ product.category?.name || 'Sin categoría' }}</td>
+                <td>{{ product.unit }}</td>
+                <td class="numeric">{{ product.unitPrice | currency: 'COP' : 'symbol-narrow' : '1.0-2' : 'es-CO' }}</td>
+                <td><span class="status-badge" [class.status-active]="product.active" [class.status-inactive]="!product.active">{{ product.active ? 'Activo' : 'Inactivo' }}</span></td>
+                @if (isAdministrator()) {
+                  <td class="action-cell">
+                    <button class="table-action" type="button" (click)="openEdit(product)">Editar</button>
+                    <button class="table-action" type="button" [disabled]="busyId() === product.id" (click)="toggleActive(product)">
+                      {{ busyId() === product.id ? 'Actualizando…' : product.active ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pagination">
+        <span>{{ total() }} productos · página {{ page() }} de {{ pageCount }}</span>
+        <div class="pagination-actions">
+          <button class="button button-secondary" type="button" [disabled]="page() <= 1" (click)="movePage(-1)">Anterior</button>
+          <button class="button button-secondary" type="button" [disabled]="page() >= pageCount" (click)="movePage(1)">Siguiente</button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>

@@ -1,0 +1,284 @@
+.editor-page {
+  display: grid;
+  gap: 20px;
+}
+
+.editor-page-heading {
+  margin-bottom: 4px;
+}
+
+.quotation-form {
+  display: grid;
+  gap: 13px;
+}
+
+.form-section {
+  padding: 23px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+}
+
+.form-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-bottom: 22px;
+}
+
+.form-section-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.form-section-heading p {
+  margin: 4px 0 0;
+  color: var(--ink-subtle);
+  font-size: 11px;
+}
+
+.section-index {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--signal);
+  background: var(--signal-soft);
+  border-radius: 6px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.quote-header-grid {
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr);
+}
+
+.field-hint {
+  color: var(--ink-subtle);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.line-section .form-section-heading {
+  align-items: center;
+}
+
+.line-section .form-section-heading > div {
+  flex: 1;
+}
+
+.add-line-button {
+  min-height: 36px;
+  flex: 0 0 auto;
+  padding-inline: 11px;
+  font-size: 11px;
+}
+
+.add-line-button app-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.inline-warning {
+  margin: 0 0 15px;
+  padding: 10px 12px;
+  color: #854d0e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.quote-lines {
+  display: grid;
+}
+
+.quote-line {
+  display: grid;
+  grid-template-columns: 28px minmax(220px, 1.6fr) minmax(100px, 0.55fr) minmax(120px, 0.7fr) 40px;
+  align-items: start;
+  gap: 12px;
+  padding: 15px 0;
+  border-top: 1px solid #eef2f6;
+}
+
+.line-number {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  margin-top: 25px;
+  place-items: center;
+  color: var(--ink-subtle);
+  background: var(--surface-muted);
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.numeric-control {
+  font-family: 'Fira Code', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.remove-line {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  margin-top: 22px;
+  place-items: center;
+  color: var(--ink-subtle);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.remove-line:hover:not(:disabled) {
+  color: var(--danger);
+  background: #fef2f2;
+}
+
+.remove-line:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.notes-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quote-submit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 4px 3px 0;
+}
+
+.quote-submit-bar > p {
+  margin: 0;
+  color: var(--ink-subtle);
+  font-size: 11px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.table-state {
+  display: flex;
+  min-height: 140px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+.loading-indicator {
+  width: 17px;
+  height: 17px;
+  border: 2px solid #cbd5e1;
+  border-top-color: var(--signal);
+  border-radius: 50%;
+  animation: spin 650ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 860px) {
+  .quote-line {
+    grid-template-columns: 28px minmax(180px, 1fr) minmax(120px, 0.6fr) 40px;
+  }
+
+  .discount-field {
+    grid-column: 2 / 4;
+  }
+
+  .remove-line {
+    grid-column: 4;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 620px) {
+  .editor-page-heading {
+    align-items: stretch;
+  }
+
+  .form-section {
+    padding: 17px;
+  }
+
+  .quote-header-grid,
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .line-section .form-section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .line-section .form-section-heading > div {
+    min-width: calc(100% - 45px);
+  }
+
+  .add-line-button {
+    margin-left: 41px;
+  }
+
+  .quote-line {
+    grid-template-columns: 28px minmax(0, 1fr) 40px;
+    gap: 8px;
+  }
+
+  .product-field {
+    grid-column: 2;
+  }
+
+  .quantity-field {
+    grid-column: 2;
+  }
+
+  .discount-field {
+    grid-column: 2;
+  }
+
+  .remove-line {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .quote-submit-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-indicator {
+    animation: none;
+  }
+}

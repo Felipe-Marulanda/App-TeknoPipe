@@ -1,0 +1,153 @@
+<section class="feature-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Control y análisis</p>
+      <h1>Informes</h1>
+      <p class="page-description">Consulte la actividad comercial y exporte los resultados.</p>
+    </div>
+    <button class="button button-secondary" type="button" [disabled]="downloading() || !report()?.data?.length" (click)="downloadCsv()">
+      <app-icon name="download" />
+      {{ downloading() ? 'Preparando archivo…' : 'Exportar CSV' }}
+    </button>
+  </header>
+
+  <form class="report-filters" [formGroup]="filters" (ngSubmit)="search()">
+    <label class="report-type">
+      <span>Informe</span>
+      <select class="field-control" formControlName="reportType" (change)="changeReport()">
+        <option value="quotations">Cotizaciones</option>
+        <option value="clients">Por cliente</option>
+        <option value="users">Por usuario</option>
+      </select>
+    </label>
+    @if (filters.controls.reportType.value === 'quotations') {
+      <label class="report-status">
+        <span>Estado</span>
+        <select class="field-control" formControlName="status">
+          <option value="all">Todos</option>
+          <option value="BORRADOR">Borrador</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="ENVIADA">Enviada</option>
+          <option value="APROBADA">Aprobada</option>
+          <option value="RECHAZADA">Rechazada</option>
+          <option value="VENCIDA">Vencida</option>
+        </select>
+      </label>
+    }
+    <label class="report-date">
+      <span>Desde</span>
+      <input class="field-control" formControlName="from" type="date" />
+    </label>
+    <label class="report-date">
+      <span>Hasta</span>
+      <input class="field-control" formControlName="to" type="date" />
+    </label>
+    <button class="button button-primary" type="submit">Generar informe</button>
+  </form>
+
+  @if (rangeError()) {
+    <p class="filter-error" role="alert">{{ rangeError() }}</p>
+  }
+  @if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo generar el informe</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="search()">Intentar de nuevo</button>
+    </section>
+  }
+
+  @if (loading()) {
+    <section class="data-panel">
+      <div class="table-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Generando informe…</div>
+    </section>
+  } @else if (report(); as result) {
+    <section class="report-summary">
+      <div>
+        <span>Registros encontrados</span>
+        <strong>{{ result.meta.total | number: '1.0-0' : 'es-CO' }}</strong>
+      </div>
+      @if (result.kind === 'quotations' && result.meta.quotedValue !== undefined) {
+        <div>
+          <span>Valor cotizado en el periodo</span>
+          <strong>{{ result.meta.quotedValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</strong>
+        </div>
+      }
+      <p>{{ filters.controls.from.value | date: 'd MMM y' : 'UTC' : 'es-CO' }} — {{ filters.controls.to.value | date: 'd MMM y' : 'UTC' : 'es-CO' }}</p>
+    </section>
+
+    <section class="data-panel">
+      @if (result.data.length === 0) {
+        <div class="table-state empty-state">
+          <span class="empty-pipe" aria-hidden="true"></span>
+          <h2>Sin resultados para este periodo</h2>
+          <p>Amplíe las fechas o elija otro tipo de informe.</p>
+        </div>
+      } @else {
+        <div class="data-table-wrap">
+          @switch (result.kind) {
+            @case ('quotations') {
+              <table class="data-table report-quotation-table">
+                <thead>
+                  <tr><th scope="col">Número</th><th scope="col">Cliente</th><th scope="col">Responsable</th><th scope="col">Emisión</th><th scope="col">Estado</th><th scope="col" class="numeric">Total</th></tr>
+                </thead>
+                <tbody>
+                  @for (row of quotationRows(); track row.number) {
+                    <tr>
+                      <td class="numeric table-primary">{{ row.number }}</td>
+                      <td>{{ row.clientName }}</td>
+                      <td>{{ row.createdBy }}</td>
+                      <td>{{ row.issueDate | date: 'd MMM y' : 'UTC' : 'es-CO' }}</td>
+                      <td><span class="status-badge" [class]="'status-badge status-' + row.status.toLowerCase()">{{ statusLabel(row.status) }}</span></td>
+                      <td class="numeric">{{ row.total | currency: row.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @case ('clients') {
+              <table class="data-table">
+                <thead>
+                  <tr><th scope="col">Cliente</th><th scope="col" class="numeric">Cotizaciones</th><th scope="col" class="numeric">Valor cotizado</th></tr>
+                </thead>
+                <tbody>
+                  @for (row of clientRows(); track row.clientId) {
+                    <tr>
+                      <td class="table-primary">{{ row.clientName }}</td>
+                      <td class="numeric">{{ row.quotationCount | number: '1.0-0' : 'es-CO' }}</td>
+                      <td class="numeric">{{ row.quotedValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @case ('users') {
+              <table class="data-table">
+                <thead>
+                  <tr><th scope="col">Responsable</th><th scope="col" class="numeric">Cotizaciones</th><th scope="col" class="numeric">Valor cotizado</th></tr>
+                </thead>
+                <tbody>
+                  @for (row of userRows(); track row.userId) {
+                    <tr>
+                      <td class="table-primary">{{ row.fullName }}</td>
+                      <td class="numeric">{{ row.quotationCount | number: '1.0-0' : 'es-CO' }}</td>
+                      <td class="numeric">{{ row.quotedValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          }
+        </div>
+      }
+      @if (result.meta.total > 0) {
+        <footer class="pagination">
+          <span>{{ result.meta.total }} registros · página {{ page() }} de {{ pageCount }}</span>
+          <div class="pagination-actions">
+            <button class="button button-secondary" type="button" [disabled]="page() <= 1" (click)="movePage(-1)">Anterior</button>
+            <button class="button button-secondary" type="button" [disabled]="page() >= pageCount" (click)="movePage(1)">Siguiente</button>
+          </div>
+        </footer>
+      }
+    </section>
+  }
+</section>

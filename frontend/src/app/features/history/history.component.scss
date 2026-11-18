@@ -1,0 +1,159 @@
+.feature-page {
+  display: grid;
+  gap: 20px;
+}
+
+.history-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 0.7fr) 150px 150px auto;
+  align-items: end;
+  gap: 9px;
+}
+
+.history-filters label {
+  display: grid;
+  gap: 5px;
+}
+
+.history-filters label > span:not(.sr-only) {
+  color: var(--ink-subtle);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.history-filters .button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.filter-error {
+  margin: -10px 0 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.table-state {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+.loading-indicator {
+  width: 17px;
+  height: 17px;
+  border: 2px solid #cbd5e1;
+  border-top-color: var(--signal);
+  border-radius: 50%;
+  animation: spin 650ms linear infinite;
+}
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.empty-pipe {
+  width: 4px;
+  height: 35px;
+  margin-bottom: 8px;
+  background: #a7f3d0;
+  border-radius: 3px;
+}
+
+.empty-state h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.empty-state p {
+  max-width: 370px;
+  margin: 5px 0 14px;
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.history-table {
+  min-width: 850px;
+}
+
+.history-number {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+}
+
+.history-open {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  color: var(--signal);
+  text-decoration: none;
+}
+
+.history-open:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.pagination .button {
+  min-height: 34px;
+  padding-inline: 10px;
+  font-size: 11px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1050px) {
+  .history-filters {
+    grid-template-columns: minmax(180px, 1fr) minmax(160px, 0.8fr) 140px 140px;
+  }
+
+  .history-filters .button {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 680px) {
+  .history-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .history-search,
+  .history-status,
+  .history-filters .button {
+    grid-column: 1 / -1;
+  }
+
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-block: 11px;
+  }
+
+  .pagination-actions {
+    width: 100%;
+  }
+
+  .pagination-actions .button {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-indicator {
+    animation: none;
+  }
+}

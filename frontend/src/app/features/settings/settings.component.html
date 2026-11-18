@@ -1,0 +1,176 @@
+<section class="settings-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Preferencias de empresa</p>
+      <h1>Configuración</h1>
+      <p class="page-description">Estos datos se usan en la numeración y presentación de cotizaciones.</p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="table-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Cargando configuración…</div>
+  } @else if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo abrir la configuración</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="loadSettings()">Intentar de nuevo</button>
+    </section>
+  } @else {
+    @if (saveError()) {
+      <section class="state-message state-message-error save-message" role="alert">
+        <h2>No se guardaron los cambios</h2>
+        <p>{{ saveError() }}</p>
+      </section>
+    }
+    @if (saved()) {
+      <p class="saved-message" role="status">La configuración se guardó correctamente.</p>
+    }
+
+    <form class="settings-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <section class="settings-section" aria-labelledby="company-identity-title">
+        <header class="settings-section-heading">
+          <div class="settings-mark" aria-hidden="true">01</div>
+          <div>
+            <h2 id="company-identity-title">Identidad comercial</h2>
+            <p>Nombre y datos de contacto que acompañan las propuestas.</p>
+          </div>
+        </header>
+        <div class="settings-content identity-content">
+          <div class="logo-editor">
+            <div class="logo-preview">
+              @if (logoPreview()) {
+                <img [src]="logoPreview()" alt="Vista previa del logotipo empresarial" />
+              } @else {
+                <span aria-hidden="true">TP</span>
+                <small>Sin logotipo</small>
+              }
+            </div>
+            <div class="logo-actions">
+              <span class="field-label-title">Logotipo</span>
+              <p>PNG hasta 500 KB. Se verifican formato y dimensiones al guardar.</p>
+              <label class="button button-secondary logo-upload">
+                Elegir archivo
+                <input type="file" accept="image/png" (change)="selectLogo($event)" />
+              </label>
+              @if (logoPreview()) {
+                <button class="text-button" type="button" (click)="removeLogo()">Quitar logotipo</button>
+              }
+              @if (logoError()) {
+                <span class="field-error" role="alert">{{ logoError() }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="form-grid settings-grid">
+            <label class="field-label field-span">
+              Nombre comercial
+              <input class="field-control" formControlName="commercialName" maxlength="200" />
+            </label>
+            <label class="field-label">
+              NIT / identificación tributaria
+              <input class="field-control" formControlName="taxIdentification" maxlength="64" />
+            </label>
+            <label class="field-label">
+              Correo de contacto
+              <input class="field-control" formControlName="email" type="email" maxlength="320" />
+              @if (form.controls.email.touched && form.controls.email.invalid) {
+                <span class="field-error">Ingrese un correo válido.</span>
+              }
+            </label>
+            <label class="field-label">
+              Teléfono
+              <input class="field-control" formControlName="phone" type="tel" maxlength="40" />
+            </label>
+            <label class="field-label">
+              Dirección
+              <input class="field-control" formControlName="address" maxlength="240" />
+            </label>
+            <label class="field-label">
+              Ciudad
+              <input class="field-control" formControlName="city" maxlength="120" />
+            </label>
+            <label class="field-label">
+              Departamento
+              <input class="field-control" formControlName="department" maxlength="120" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="quote-rules-title">
+        <header class="settings-section-heading">
+          <div class="settings-mark" aria-hidden="true">02</div>
+          <div>
+            <h2 id="quote-rules-title">Reglas de cotización</h2>
+            <p>Moneda, impuestos y vigencia predeterminada.</p>
+          </div>
+        </header>
+        <div class="settings-content">
+          <div class="form-grid settings-grid">
+            <label class="field-label">
+              Moneda
+              <input class="field-control uppercase-field" formControlName="currency" maxlength="3" required />
+              <span class="field-hint">Código ISO 4217, por ejemplo COP.</span>
+              @if (form.controls.currency.touched && form.controls.currency.invalid) {
+                <span class="field-error">Use tres letras mayúsculas.</span>
+              }
+            </label>
+            <label class="field-label">
+              Impuesto (%)
+              <input class="field-control numeric-control" formControlName="taxRate" inputmode="decimal" required />
+              @if (form.controls.taxRate.touched && form.controls.taxRate.invalid) {
+                <span class="field-error">Use un valor entre 0 y 100, con máximo dos decimales.</span>
+              }
+            </label>
+            <label class="field-label">
+              Prefijo de cotización
+              <input class="field-control uppercase-field" formControlName="quotationPrefix" maxlength="12" required />
+              <span class="field-hint">De 2 a 12 letras mayúsculas o números.</span>
+              @if (form.controls.quotationPrefix.touched && form.controls.quotationPrefix.invalid) {
+                <span class="field-error">Use entre 2 y 12 caracteres válidos.</span>
+              }
+            </label>
+            <label class="field-label">
+              Vigencia predeterminada (días)
+              <input class="field-control numeric-control" formControlName="defaultValidityDays" inputmode="numeric" />
+              <span class="field-hint">Déjela vacía para solicitar una fecha en cada cotización.</span>
+              @if (form.controls.defaultValidityDays.touched && form.controls.defaultValidityDays.invalid) {
+                <span class="field-error">Ingrese un número entre 1 y 365.</span>
+              }
+            </label>
+          </div>
+          <label class="toggle-row">
+            <input formControlName="discountsEnabled" type="checkbox" />
+            <span class="toggle-copy">
+              <strong>Permitir descuentos</strong>
+              <span>Los usuarios podrán incluir descuentos al crear cotizaciones.</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="commercial-terms-title">
+        <header class="settings-section-heading">
+          <div class="settings-mark" aria-hidden="true">03</div>
+          <div>
+            <h2 id="commercial-terms-title">Términos comerciales</h2>
+            <p>Texto predeterminado para incluir en nuevas cotizaciones.</p>
+          </div>
+        </header>
+        <div class="settings-content">
+          <label class="field-label">
+            Condiciones
+            <textarea class="field-control terms-control" formControlName="defaultTerms" maxlength="10000"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <footer class="settings-footer">
+        <p>Los cambios se aplican a las cotizaciones nuevas; los documentos existentes conservan sus datos.</p>
+        <button class="button button-primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+        </button>
+      </footer>
+    </form>
+  }
+</section>

@@ -1,0 +1,191 @@
+<section class="detail-page">
+  @if (loading()) {
+    <div class="table-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Cargando cotización…</div>
+  } @else if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo abrir la cotización</h2>
+      <p>{{ errorMessage() }}</p>
+      <a class="button button-secondary" routerLink="/quotations">Volver a cotizaciones</a>
+    </section>
+  } @else if (quotation(); as quote) {
+    <header class="detail-heading">
+      <div>
+        <a class="back-link" routerLink="/quotations">← Cotizaciones</a>
+        <p class="eyebrow">Propuesta comercial</p>
+        <div class="quote-title-row">
+          <h1>{{ quote.number }}</h1>
+          <span class="status-badge" [class]="'status-badge status-' + quote.status.toLowerCase()">
+            {{ statusLabel(quote.status) }}
+          </span>
+        </div>
+        <p class="page-description">{{ quote.clientNameSnapshot }} · emitida {{ quote.issueDate | date: 'd MMMM y' : 'UTC' : 'es-CO' }}</p>
+      </div>
+      <div class="detail-actions">
+        @if (quote.status === 'BORRADOR') {
+          <a class="button button-secondary" [routerLink]="['/quotations', quote.id, 'edit']">
+            <app-icon name="edit" />
+            Editar borrador
+          </a>
+        }
+        <button class="button button-secondary" type="button" [disabled]="busyAction() !== null" (click)="duplicate()">
+          {{ busyAction() === 'duplicate' ? 'Creando revisión…' : 'Crear revisión' }}
+        </button>
+        <button class="button button-secondary" type="button" [disabled]="busyAction() !== null" (click)="downloadPdf()">
+          <app-icon name="download" />
+          {{ busyAction() === 'pdf' ? 'Preparando PDF…' : 'Descargar PDF' }}
+        </button>
+        @if (quote.status === 'BORRADOR') {
+          <button class="button button-primary" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('PENDIENTE')">
+            {{ busyAction() === 'status' ? 'Actualizando…' : 'Enviar a revisión' }}
+          </button>
+        } @else if (quote.status === 'PENDIENTE') {
+          <button class="button button-primary" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('ENVIADA')">
+            {{ busyAction() === 'status' ? 'Actualizando…' : 'Marcar como enviada' }}
+          </button>
+        }
+        @if (isAdministrator && quote.status === 'ENVIADA') {
+          <button class="button button-approve" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('APROBADA')">Aprobar</button>
+          <button class="button button-reject" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('RECHAZADA')">Rechazar</button>
+        }
+        @if (isAdministrator && canExpire()) {
+          <button class="button button-secondary" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('VENCIDA')">Marcar vencida</button>
+        }
+      </div>
+    </header>
+
+    @if (actionError()) {
+      <section class="state-message state-message-error action-error" role="alert">
+        <h2>No se pudo completar la acción</h2>
+        <p>{{ actionError() }}</p>
+      </section>
+    }
+
+    <div class="detail-grid">
+      <div class="detail-main">
+        <section class="detail-section" aria-labelledby="client-info-title">
+          <header class="detail-section-heading">
+            <div>
+              <p class="eyebrow">Cliente</p>
+              <h2 id="client-info-title">{{ quote.clientNameSnapshot }}</h2>
+            </div>
+            <span class="document-id">{{ quote.clientIdentificationType }} {{ quote.clientIdentificationSnapshot }}</span>
+          </header>
+          <div class="client-facts">
+            @if (quote.clientContactSnapshot) {
+              <div><span>Contacto</span><strong>{{ quote.clientContactSnapshot }}</strong></div>
+            }
+            @if (quote.clientEmailSnapshot) {
+              <div><span>Correo</span><strong>{{ quote.clientEmailSnapshot }}</strong></div>
+            }
+            @if (quote.clientPhoneSnapshot) {
+              <div><span>Teléfono</span><strong>{{ quote.clientPhoneSnapshot }}</strong></div>
+            }
+            @if (quote.clientAddressSnapshot) {
+              <div><span>Dirección</span><strong>{{ quote.clientAddressSnapshot }}</strong></div>
+            }
+            @if (quote.clientCitySnapshot || quote.clientDepartmentSnapshot) {
+              <div><span>Ubicación</span><strong>{{ quote.clientCitySnapshot }}{{ quote.clientCitySnapshot && quote.clientDepartmentSnapshot ? ', ' : '' }}{{ quote.clientDepartmentSnapshot }}</strong></div>
+            }
+          </div>
+        </section>
+
+        <section class="detail-section items-section" aria-labelledby="items-title">
+          <header class="detail-section-heading">
+            <div>
+              <p class="eyebrow">Detalle</p>
+              <h2 id="items-title">Productos cotizados</h2>
+            </div>
+            <span class="item-count">{{ quote.items.length }} {{ quote.items.length === 1 ? 'línea' : 'líneas' }}</span>
+          </header>
+          <div class="data-table-wrap">
+            <table class="data-table detail-items-table">
+              <thead>
+                <tr>
+                  <th scope="col">Producto</th>
+                  <th scope="col" class="numeric">Cantidad</th>
+                  <th scope="col" class="numeric">Precio unitario</th>
+                  <th scope="col" class="numeric">Total línea</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of quote.items; track item.id) {
+                  <tr>
+                    <td>
+                      <span class="table-primary">{{ item.productName }}</span>
+                      <span class="table-secondary">{{ item.productReference }} · {{ item.unit }}</span>
+                      @if (item.description) {
+                        <span class="table-secondary">{{ item.description }}</span>
+                      }
+                    </td>
+                    <td class="numeric">{{ item.quantity }}</td>
+                    <td class="numeric">{{ item.unitPrice | currency: quote.currency : 'symbol-narrow' : '1.0-2' : 'es-CO' }}</td>
+                    <td class="numeric table-primary">{{ item.total | currency: quote.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="totals">
+            <div><span>Subtotal</span><strong>{{ quote.subtotal | currency: quote.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</strong></div>
+            @if (hasDiscount(quote)) {
+              <div><span>Descuentos</span><strong>−{{ quote.discountTotal | currency: quote.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</strong></div>
+            }
+            <div><span>Impuestos ({{ quote.taxRate }}%)</span><strong>{{ quote.taxTotal | currency: quote.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</strong></div>
+            <div class="grand-total"><span>Total cotizado</span><strong>{{ quote.total | currency: quote.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</strong></div>
+          </div>
+        </section>
+
+        @if (quote.observations || quote.commercialTerms) {
+          <section class="detail-section notes-detail" aria-label="Notas comerciales">
+            @if (quote.observations) {
+              <div>
+                <h2>Observaciones</h2>
+                <p>{{ quote.observations }}</p>
+              </div>
+            }
+            @if (quote.commercialTerms) {
+              <div>
+                <h2>Términos comerciales</h2>
+                <p>{{ quote.commercialTerms }}</p>
+              </div>
+            }
+          </section>
+        }
+      </div>
+
+      <aside class="detail-aside">
+        <section class="detail-section summary-section">
+          <p class="eyebrow">Resumen</p>
+          <p class="summary-total">{{ quote.total | currency: quote.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</p>
+          <div class="summary-dates">
+            <div><span>Fecha de emisión</span><strong>{{ quote.issueDate | date: 'd MMM y' : 'UTC' : 'es-CO' }}</strong></div>
+            <div><span>Válida hasta</span><strong>{{ quote.expirationDate | date: 'd MMM y' : 'UTC' : 'es-CO' }}</strong></div>
+          </div>
+          @if (quote.revisionNumber) {
+            <p class="revision-note">Revisión {{ quote.revisionNumber }}</p>
+          }
+        </section>
+
+        <section class="detail-section timeline-section" aria-labelledby="timeline-title">
+          <p class="eyebrow">Seguimiento</p>
+          <h2 id="timeline-title">Historial de estados</h2>
+          <ol class="timeline">
+            @for (entry of quote.statusHistory; track entry.id) {
+              <li>
+                <span class="timeline-marker" aria-hidden="true"></span>
+                <div>
+                  <strong>{{ statusLabel(entry.newStatus) }}</strong>
+                  <time [attr.datetime]="entry.changedAt">{{ entry.changedAt | date: 'd MMM y, HH:mm' : '' : 'es-CO' }}</time>
+                  <span>{{ entry.changedBy.fullName }}</span>
+                  @if (entry.observation) {
+                    <p>{{ entry.observation }}</p>
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+        </section>
+      </aside>
+    </div>
+  }
+</section>

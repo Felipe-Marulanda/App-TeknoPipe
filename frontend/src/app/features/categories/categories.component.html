@@ -1,0 +1,132 @@
+<section class="feature-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Estructura de catálogo</p>
+      <h1>Categorías</h1>
+      <p class="page-description">Organice los productos con grupos claros para su equipo.</p>
+    </div>
+    @if (isAdministrator()) {
+      <button class="button button-primary" type="button" (click)="openCreate()">
+        <app-icon name="plus" />
+        Nueva categoría
+      </button>
+    }
+  </header>
+
+  <form class="list-toolbar" [formGroup]="filters" (ngSubmit)="search()">
+    <label class="search-control">
+      <app-icon name="search" />
+      <span class="sr-only">Buscar categorías</span>
+      <input formControlName="search" type="search" placeholder="Buscar categoría" autocomplete="off" />
+    </label>
+    <label class="filter-control">
+      <span class="sr-only">Filtrar por estado</span>
+      <select class="field-control" formControlName="active" (change)="changeFilter()">
+        <option value="all">Todos los estados</option>
+        <option value="true">Activas</option>
+        <option value="false">Inactivas</option>
+      </select>
+    </label>
+    <button class="button button-secondary" type="submit">Buscar</button>
+  </form>
+
+  @if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo completar la operación</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="search()">Intentar de nuevo</button>
+    </section>
+  }
+
+  @if (formOpen() && isAdministrator()) {
+    <section class="editor-panel" aria-labelledby="category-editor-title">
+      <header class="editor-heading">
+        <div>
+          <p class="eyebrow">{{ selected() ? 'Catálogo' : 'Nuevo registro' }}</p>
+          <h2 id="category-editor-title">{{ selected() ? 'Editar categoría' : 'Agregar categoría' }}</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Cerrar formulario" (click)="closeForm()">
+          <app-icon name="close" />
+        </button>
+      </header>
+      @if (formError()) {
+        <p class="inline-error" role="alert">{{ formError() }}</p>
+      }
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-grid category-form-grid">
+          <label class="field-label">
+            Nombre
+            <input class="field-control" formControlName="name" maxlength="120" required />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="field-error">Ingrese un nombre de hasta 120 caracteres.</span>
+            }
+          </label>
+          <label class="field-label">
+            Descripción
+            <textarea class="field-control" formControlName="description" maxlength="500"></textarea>
+          </label>
+        </div>
+        <footer class="form-actions">
+          <button class="button button-quiet" type="button" (click)="closeForm()">Cancelar</button>
+          <button class="button button-primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Guardando…' : selected() ? 'Guardar cambios' : 'Crear categoría' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  }
+
+  <section class="data-panel">
+    @if (loading()) {
+      <div class="table-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Cargando categorías…</div>
+    } @else if (categories().length === 0) {
+      <div class="table-state empty-state">
+        <span class="empty-pipe" aria-hidden="true"></span>
+        <h2>{{ filters.controls.search.value ? 'No encontramos coincidencias' : 'Aún no hay categorías' }}</h2>
+        <p>Las categorías permiten ordenar y encontrar productos más rápido.</p>
+        @if (!filters.controls.search.value && isAdministrator()) {
+          <button class="button button-secondary" type="button" (click)="openCreate()">Agregar categoría</button>
+        }
+      </div>
+    } @else {
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Categoría</th>
+              <th scope="col">Descripción</th>
+              <th scope="col">Estado</th>
+              @if (isAdministrator()) {
+                <th scope="col"><span class="sr-only">Acciones</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (category of categories(); track category.id) {
+              <tr>
+                <td><span class="table-primary">{{ category.name }}</span></td>
+                <td>{{ category.description || '—' }}</td>
+                <td><span class="status-badge" [class.status-active]="category.active" [class.status-inactive]="!category.active">{{ category.active ? 'Activa' : 'Inactiva' }}</span></td>
+                @if (isAdministrator()) {
+                  <td class="action-cell">
+                    <button class="table-action" type="button" (click)="openEdit(category)">Editar</button>
+                    <button class="table-action" type="button" [disabled]="busyId() === category.id" (click)="toggleActive(category)">
+                      {{ busyId() === category.id ? 'Actualizando…' : category.active ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pagination">
+        <span>{{ total() }} categorías · página {{ page() }} de {{ pageCount }}</span>
+        <div class="pagination-actions">
+          <button class="button button-secondary" type="button" [disabled]="page() <= 1" (click)="movePage(-1)">Anterior</button>
+          <button class="button button-secondary" type="button" [disabled]="page() >= pageCount" (click)="movePage(1)">Siguiente</button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>

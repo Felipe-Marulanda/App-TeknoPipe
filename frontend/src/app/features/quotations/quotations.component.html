@@ -1,0 +1,102 @@
+<section class="feature-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Propuestas comerciales</p>
+      <h1>Cotizaciones</h1>
+      <p class="page-description">Prepare, consulte y dé seguimiento a cada propuesta.</p>
+    </div>
+    <a class="button button-primary" routerLink="/quotations/new">
+      <app-icon name="plus" />
+      Nueva cotización
+    </a>
+  </header>
+
+  <form class="list-toolbar" [formGroup]="filters" (ngSubmit)="search()">
+    <label class="search-control">
+      <app-icon name="search" />
+      <span class="sr-only">Buscar cotizaciones</span>
+      <input
+        formControlName="search"
+        type="search"
+        placeholder="Buscar por número de cotización"
+        autocomplete="off"
+      />
+    </label>
+    <label class="filter-control">
+      <span class="sr-only">Filtrar por estado</span>
+      <select class="field-control" formControlName="status" (change)="changeStatus()">
+        <option value="all">Todos los estados</option>
+        <option value="BORRADOR">Borrador</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="ENVIADA">Enviada</option>
+        <option value="APROBADA">Aprobada</option>
+        <option value="RECHAZADA">Rechazada</option>
+        <option value="VENCIDA">Vencida</option>
+      </select>
+    </label>
+    <button class="button button-secondary" type="submit">Buscar</button>
+  </form>
+
+  @if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo abrir la lista</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="search()">Intentar de nuevo</button>
+    </section>
+  }
+
+  <section class="data-panel">
+    @if (loading()) {
+      <div class="table-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Cargando cotizaciones…</div>
+    } @else if (quotations().length === 0) {
+      <div class="table-state empty-state">
+        <span class="empty-pipe" aria-hidden="true"></span>
+        <h2>{{ filters.controls.search.value ? 'No encontramos coincidencias' : 'Aún no hay cotizaciones' }}</h2>
+        <p>Prepare una propuesta para un cliente con productos y precios vigentes.</p>
+        @if (!filters.controls.search.value) {
+          <a class="button button-secondary" routerLink="/quotations/new">Crear cotización</a>
+        }
+      </div>
+    } @else {
+      <div class="data-table-wrap">
+        <table class="data-table quotation-table">
+          <thead>
+            <tr>
+              <th scope="col">Número</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Vence</th>
+              <th scope="col" class="numeric">Total</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="sr-only">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (quotation of quotations(); track quotation.id) {
+              <tr>
+                <td><span class="table-primary quote-number">{{ quotation.number }}</span></td>
+                <td><span class="table-primary">{{ quotation.clientNameSnapshot }}</span></td>
+                <td>{{ quotation.issueDate | date: 'd MMM y' : 'UTC' : 'es-CO' }}</td>
+                <td>{{ quotation.expirationDate | date: 'd MMM y' : 'UTC' : 'es-CO' }}</td>
+                <td class="numeric">{{ quotation.total | currency: quotation.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</td>
+                <td>
+                  <span class="status-badge" [class]="'status-badge status-' + quotation.status.toLowerCase()">
+                    {{ statusLabel(quotation.status) }}
+                  </span>
+                </td>
+                <td><a class="table-action detail-link" [routerLink]="['/quotations', quotation.id]">Abrir</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pagination">
+        <span>{{ total() }} cotizaciones · página {{ page() }} de {{ pageCount }}</span>
+        <div class="pagination-actions">
+          <button class="button button-secondary" type="button" [disabled]="page() <= 1" (click)="movePage(-1)">Anterior</button>
+          <button class="button button-secondary" type="button" [disabled]="page() >= pageCount" (click)="movePage(1)">Siguiente</button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>

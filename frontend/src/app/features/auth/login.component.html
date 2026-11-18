@@ -1,0 +1,104 @@
+<main class="login-page">
+  <section class="brand-panel" aria-label="TEKNOPIPE">
+    <a class="brand-lockup" href="/" aria-label="TEKNOPIPE, página de inicio">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 42 42" fill="none">
+          <path d="M7 12h16a6 6 0 0 1 6 6v12" />
+          <path d="M7 21h7a6 6 0 0 1 6 6v3" />
+          <path d="M7 12v18" />
+          <circle cx="7" cy="12" r="3" />
+          <circle cx="29" cy="30" r="3" />
+        </svg>
+      </span>
+      <span>TEKNOPIPE</span>
+    </a>
+
+    <div class="brand-copy">
+      <p class="brand-kicker">Gestión comercial</p>
+      <h1>Cada cotización,<br />bien conectada.</h1>
+      <p class="brand-description">
+        Clientes, catálogo y propuestas comerciales en un solo espacio de trabajo.
+      </p>
+    </div>
+
+    <div class="brand-footer">
+      <span class="status-light" aria-hidden="true"></span>
+      <span>Plataforma de ventas y cotizaciones</span>
+    </div>
+  </section>
+
+  <section class="login-panel">
+    <div class="login-card">
+      <p class="eyebrow">Acceso al sistema</p>
+      <h2>Iniciar sesión</h2>
+      <p class="login-intro">Ingrese con las credenciales de su cuenta.</p>
+
+      @if (errorMessage()) {
+        <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-field">
+          <label for="email">Correo electrónico</label>
+          <input
+            autocomplete="username"
+            formControlName="email"
+            id="email"
+            inputmode="email"
+            type="email"
+            [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
+            [attr.aria-describedby]="form.controls.email.touched ? 'email-error' : null"
+            placeholder="nombre@empresa.com"
+          />
+          @if (form.controls.email.touched && form.controls.email.hasError('required')) {
+            <span class="field-error" id="email-error">Ingrese su correo electrónico.</span>
+          } @else if (form.controls.email.touched && form.controls.email.hasError('email')) {
+            <span class="field-error" id="email-error">Revise el formato del correo.</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="password">Contraseña</label>
+          <div class="password-control">
+            <input
+              autocomplete="current-password"
+              formControlName="password"
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+              [attr.aria-describedby]="form.controls.password.touched ? 'password-error' : null"
+              placeholder="Ingrese su contraseña"
+            />
+            <button
+              class="password-toggle"
+              type="button"
+              [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-pressed]="showPassword()"
+              (click)="showPassword.set(!showPassword())"
+            >
+              {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </div>
+          @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+            <span class="field-error" id="password-error">Ingrese su contraseña.</span>
+          }
+        </div>
+
+        <button class="button button-primary login-submit" type="submit" [disabled]="submitting()">
+          @if (submitting()) {
+            <span class="button-spinner" aria-hidden="true"></span>
+            Validando acceso…
+          } @else {
+            Ingresar
+          }
+        </button>
+      </form>
+
+      <p class="security-note">
+        <span aria-hidden="true">●</span>
+        Sesión protegida con autenticación segura
+      </p>
+    </div>
+    <footer class="login-legal">© {{ currentYear }} TEKNOPIPE</footer>
+  </section>
+</main>

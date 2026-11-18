@@ -1,0 +1,183 @@
+<section class="dashboard-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Vista general</p>
+      <h1>Resumen comercial</h1>
+      <p class="page-description">Actividad y valor de las cotizaciones registradas.</p>
+    </div>
+    <a class="button button-primary" routerLink="/quotations/new">
+      <app-icon name="plus" />
+      Crear cotización
+    </a>
+  </header>
+
+  @if (loading()) {
+    <div class="loading-panel" role="status">
+      <span class="loading-indicator" aria-hidden="true"></span>
+      Cargando información comercial…
+    </div>
+  } @else if (errorMessage()) {
+    <section class="state-panel state-error" role="alert">
+      <h2>No se pudo abrir el resumen</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="reload()">Intentar de nuevo</button>
+    </section>
+  } @else if (summary(); as data) {
+    <section class="overview-grid" aria-label="Indicadores comerciales">
+      <article class="value-panel">
+        <div class="value-panel-heading">
+          <div>
+            <p class="metric-label">Valor total cotizado</p>
+            <h2>
+              {{ data.totals.valueQuoted | currency: (data.recentQuotations[0]?.currency ?? 'COP') : 'symbol-narrow' : '1.0-0' : 'es-CO' }}
+            </h2>
+          </div>
+          <span class="value-stamp" aria-hidden="true">
+            <svg viewBox="0 0 52 52" fill="none">
+              <path d="M8 16h18a7 7 0 0 1 7 7v16" />
+              <path d="M8 26h8a7 7 0 0 1 7 7v6" />
+              <path d="M8 16v23" />
+              <circle cx="8" cy="16" r="4" />
+              <circle cx="33" cy="39" r="4" />
+              <path d="M33 8v9M28.5 12.5h9" />
+            </svg>
+          </span>
+        </div>
+        <div class="value-panel-foot">
+          <span class="metric-foot-mark" aria-hidden="true"></span>
+          <span>Acumulado en cotizaciones registradas</span>
+        </div>
+      </article>
+
+      <article class="count-panel">
+        <p class="metric-label">Cotizaciones</p>
+        <p class="count-value">{{ data.totals.quotations | number: '1.0-0' : 'es-CO' }}</p>
+        <p class="metric-caption">Propuestas creadas</p>
+        <a class="text-link" routerLink="/quotations">
+          Ver cotizaciones <app-icon name="arrow" />
+        </a>
+      </article>
+
+      <article class="status-panel">
+        <div class="section-title-row">
+          <div>
+            <p class="metric-label">En seguimiento</p>
+            <h2>Estados actuales</h2>
+          </div>
+          <a class="icon-link" routerLink="/history" aria-label="Consultar historial">
+            <app-icon name="arrow" />
+          </a>
+        </div>
+        <div class="status-breakdown">
+          <div>
+            <span class="status-dot status-dot-draft" aria-hidden="true"></span>
+            <span>Borradores</span>
+            <strong>{{ data.totals.byStatus['BORRADOR'] }}</strong>
+          </div>
+          <div>
+            <span class="status-dot status-dot-open" aria-hidden="true"></span>
+            <span>Enviadas</span>
+            <strong>{{ data.totals.byStatus['ENVIADA'] }}</strong>
+          </div>
+          <div>
+            <span class="status-dot status-dot-approved" aria-hidden="true"></span>
+            <span>Aprobadas</span>
+            <strong>{{ data.totals.byStatus['APROBADA'] }}</strong>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="activity-grid">
+      <article class="chart-panel">
+        <header class="section-title-row">
+          <div>
+            <p class="metric-label">Últimos 12 meses</p>
+            <h2>Valor cotizado</h2>
+          </div>
+          <span class="chart-unit">COP</span>
+        </header>
+        @if (monthlyBars().length) {
+          <div class="chart" aria-hidden="true">
+            <div class="chart-y-labels" aria-hidden="true">
+              <span>Mayor</span>
+              <span>Menor</span>
+            </div>
+            <div class="chart-columns">
+              @for (month of monthlyBars(); track month.month) {
+                <div class="chart-column" [attr.title]="month.label + ': ' + month.total + ' COP'">
+                  <div class="bar-track">
+                    <span
+                      class="chart-bar"
+                      [class.chart-bar-current]="month.month === monthlyBars()[monthlyBars().length - 1]?.month"
+                      [style.height.%]="month.height"
+                    ></span>
+                  </div>
+                  <span class="chart-month">{{ month.label }}</span>
+                </div>
+              }
+            </div>
+          </div>
+          <table class="sr-only">
+            <caption>Valor cotizado por mes durante los últimos 12 meses</caption>
+            <thead>
+              <tr><th scope="col">Mes</th><th scope="col">Cotizaciones</th><th scope="col">Valor</th></tr>
+            </thead>
+            <tbody>
+              @for (month of monthlyBars(); track month.month) {
+                <tr>
+                  <th scope="row">{{ month.label }}</th>
+                  <td>{{ month.quotationCount }}</td>
+                  <td>{{ month.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <div class="chart-empty">
+            <span class="empty-pipe" aria-hidden="true"></span>
+            <p>Los valores mensuales aparecerán al registrar cotizaciones.</p>
+          </div>
+        }
+      </article>
+
+      <article class="recent-panel">
+        <header class="section-title-row">
+          <div>
+            <p class="metric-label">Actividad reciente</p>
+            <h2>Últimas cotizaciones</h2>
+          </div>
+          <a class="text-link compact-link" routerLink="/quotations">
+            Ver todas <app-icon name="arrow" />
+          </a>
+        </header>
+
+        @if (data.recentQuotations.length) {
+          <div class="recent-list">
+            @for (quotation of data.recentQuotations; track quotation.id) {
+              <a class="recent-item" [routerLink]="['/quotations', quotation.id]">
+                <span class="recent-item-main">
+                  <strong class="quote-number">{{ quotation.number }}</strong>
+                  <span class="recent-client">{{ quotation.clientNameSnapshot }}</span>
+                </span>
+                <span class="recent-item-side">
+                  <strong class="recent-total">
+                    {{ quotation.total | currency: quotation.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}
+                  </strong>
+                  <span class="status-badge" [class]="'status-badge status-' + quotation.status.toLowerCase()">
+                    {{ statusLabel(quotation.status) }}
+                  </span>
+                </span>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="empty-recent">
+            <p>Aún no hay cotizaciones en el sistema.</p>
+            <a class="button button-secondary" routerLink="/quotations/new">Crear la primera</a>
+          </div>
+        }
+      </article>
+    </section>
+  }
+</section>

@@ -1,0 +1,96 @@
+<section class="feature-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Trazabilidad</p>
+      <h1>Historial</h1>
+      <p class="page-description">Revise cambios y actividad de las cotizaciones.</p>
+    </div>
+  </header>
+
+  <form class="history-filters" [formGroup]="filters" (ngSubmit)="search()">
+    <label class="history-search">
+      <span class="sr-only">Buscar cotización o cliente</span>
+      <input class="field-control" formControlName="search" type="search" placeholder="Número o cliente" />
+    </label>
+    <label class="history-status">
+      <span class="sr-only">Filtrar por estado</span>
+      <select class="field-control" formControlName="status" (change)="changeStatus()">
+        <option value="all">Todos los estados</option>
+        <option value="BORRADOR">Borrador</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="ENVIADA">Enviada</option>
+        <option value="APROBADA">Aprobada</option>
+        <option value="RECHAZADA">Rechazada</option>
+        <option value="VENCIDA">Vencida</option>
+      </select>
+    </label>
+    <label class="history-date">
+      <span>Desde</span>
+      <input class="field-control" formControlName="from" type="date" />
+    </label>
+    <label class="history-date">
+      <span>Hasta</span>
+      <input class="field-control" formControlName="to" type="date" />
+    </label>
+    <button class="button button-secondary" type="submit">Aplicar filtros</button>
+  </form>
+
+  @if (rangeError()) {
+    <p class="filter-error" role="alert">{{ rangeError() }}</p>
+  }
+  @if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo abrir el historial</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="search()">Intentar de nuevo</button>
+    </section>
+  }
+
+  <section class="data-panel">
+    @if (loading()) {
+      <div class="table-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Cargando historial…</div>
+    } @else if (records().length === 0) {
+      <div class="table-state empty-state">
+        <span class="empty-pipe" aria-hidden="true"></span>
+        <h2>No hay actividad para mostrar</h2>
+        <p>Pruebe con otro periodo o quite alguno de los filtros.</p>
+      </div>
+    } @else {
+      <div class="data-table-wrap">
+        <table class="data-table history-table">
+          <thead>
+            <tr>
+              <th scope="col">Cotización</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Responsable</th>
+              <th scope="col">Fecha</th>
+              <th scope="col" class="numeric">Valor</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="sr-only">Detalle</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (record of records(); track record.id) {
+              <tr>
+                <td><span class="table-primary history-number">{{ record.number }}</span></td>
+                <td><span class="table-primary">{{ record.clientNameSnapshot }}</span></td>
+                <td>{{ record.createdBy.fullName }}</td>
+                <td>{{ record.issueDate | date: 'd MMM y' : 'UTC' : 'es-CO' }}</td>
+                <td class="numeric">{{ record.total | currency: record.currency : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</td>
+                <td><span class="status-badge" [class]="'status-badge status-' + record.status.toLowerCase()">{{ statusLabel(record.status) }}</span></td>
+                <td><a class="table-action history-open" [routerLink]="['/quotations', record.id]">Abrir</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pagination">
+        <span>{{ total() }} registros · página {{ page() }} de {{ pageCount }}</span>
+        <div class="pagination-actions">
+          <button class="button button-secondary" type="button" [disabled]="page() <= 1" (click)="movePage(-1)">Anterior</button>
+          <button class="button button-secondary" type="button" [disabled]="page() >= pageCount" (click)="movePage(1)">Siguiente</button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>

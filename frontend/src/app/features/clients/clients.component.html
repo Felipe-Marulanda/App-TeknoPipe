@@ -1,0 +1,210 @@
+<section class="feature-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Directorio comercial</p>
+      <h1>Clientes</h1>
+      <p class="page-description">Mantenga al día los datos de las empresas y contactos.</p>
+    </div>
+    <button class="button button-primary" type="button" (click)="openCreate()">
+      <app-icon name="plus" />
+      Nuevo cliente
+    </button>
+  </header>
+
+  <form class="list-toolbar" [formGroup]="filters" (ngSubmit)="search()">
+    <label class="search-control">
+      <app-icon name="search" />
+      <span class="sr-only">Buscar clientes</span>
+      <input
+        formControlName="search"
+        type="search"
+        placeholder="Buscar por nombre, identificación o correo"
+        autocomplete="off"
+      />
+    </label>
+    <label class="filter-control">
+      <span class="sr-only">Filtrar por estado</span>
+      <select class="field-control" formControlName="active" (change)="changeFilter()">
+        <option value="all">Todos los estados</option>
+        <option value="true">Activos</option>
+        <option value="false">Inactivos</option>
+      </select>
+    </label>
+    <button class="button button-secondary search-button" type="submit">Buscar</button>
+  </form>
+
+  @if (errorMessage()) {
+    <section class="state-message state-message-error" role="alert">
+      <h2>No se pudo completar la operación</h2>
+      <p>{{ errorMessage() }}</p>
+      <button class="button button-secondary" type="button" (click)="search()">Intentar de nuevo</button>
+    </section>
+  }
+
+  @if (formOpen()) {
+    <section class="editor-panel" aria-labelledby="client-editor-title">
+      <header class="editor-heading">
+        <div>
+          <p class="eyebrow">{{ selectedClient() ? 'Ficha del cliente' : 'Nuevo registro' }}</p>
+          <h2 id="client-editor-title">{{ selectedClient() ? 'Editar cliente' : 'Agregar cliente' }}</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Cerrar formulario" (click)="closeForm()">
+          <app-icon name="close" />
+        </button>
+      </header>
+
+      @if (formError()) {
+        <p class="inline-error" role="alert">{{ formError() }}</p>
+      }
+
+      <form class="client-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-grid">
+          <label class="field-label">
+            Tipo de identificación
+            <select class="field-control" formControlName="identificationType">
+              <option value="NIT">NIT</option>
+              <option value="CC">Cédula de ciudadanía</option>
+              <option value="CE">Cédula de extranjería</option>
+              <option value="PASAPORTE">Pasaporte</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </label>
+          <label class="field-label">
+            Número de identificación
+            <input class="field-control" formControlName="identificationNumber" maxlength="64" required />
+            @if (form.controls.identificationNumber.touched && form.controls.identificationNumber.invalid) {
+              <span class="field-error">Ingrese una identificación de hasta 64 caracteres.</span>
+            }
+          </label>
+          <label class="field-label field-span">
+            Razón social
+            <input class="field-control" formControlName="legalName" maxlength="200" required />
+            @if (form.controls.legalName.touched && form.controls.legalName.invalid) {
+              <span class="field-error">La razón social es obligatoria.</span>
+            }
+          </label>
+          <label class="field-label">
+            Persona de contacto
+            <input class="field-control" formControlName="contactName" maxlength="160" />
+          </label>
+          <label class="field-label">
+            Correo electrónico
+            <input class="field-control" formControlName="email" type="email" />
+            @if (form.controls.email.touched && form.controls.email.invalid) {
+              <span class="field-error">Revise el formato del correo.</span>
+            }
+          </label>
+          <label class="field-label">
+            Teléfono
+            <input class="field-control" formControlName="phone" type="tel" maxlength="40" />
+          </label>
+          <label class="field-label">
+            Dirección
+            <input class="field-control" formControlName="address" maxlength="240" />
+          </label>
+          <label class="field-label">
+            Ciudad
+            <input class="field-control" formControlName="city" maxlength="120" />
+          </label>
+          <label class="field-label">
+            Departamento
+            <input class="field-control" formControlName="department" maxlength="120" />
+          </label>
+        </div>
+        <footer class="form-actions">
+          <button class="button button-quiet" type="button" (click)="closeForm()">Cancelar</button>
+          <button class="button button-primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Guardando…' : selectedClient() ? 'Guardar cambios' : 'Crear cliente' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  }
+
+  <section class="data-panel clients-panel" aria-label="Lista de clientes">
+    @if (loading()) {
+      <div class="table-state" role="status">
+        <span class="loading-indicator" aria-hidden="true"></span>
+        Cargando clientes…
+      </div>
+    } @else if (clients().length === 0) {
+      <div class="table-state empty-state">
+        <span class="empty-pipe" aria-hidden="true"></span>
+        <h2>{{ filters.controls.search.value ? 'No encontramos coincidencias' : 'Aún no hay clientes' }}</h2>
+        <p>
+          {{ filters.controls.search.value
+            ? 'Pruebe con otro nombre, identificación o correo.'
+            : 'Registre un cliente para empezar a preparar cotizaciones.' }}
+        </p>
+        @if (!filters.controls.search.value) {
+          <button class="button button-secondary" type="button" (click)="openCreate()">Agregar cliente</button>
+        }
+      </div>
+    } @else {
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Cliente</th>
+              <th scope="col">Identificación</th>
+              <th scope="col">Contacto</th>
+              <th scope="col">Ubicación</th>
+              <th scope="col">Estado</th>
+              @if (isAdministrator()) {
+                <th scope="col"><span class="sr-only">Acciones</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (client of clients(); track client.id) {
+              <tr>
+                <td>
+                  <span class="table-primary">{{ client.legalName }}</span>
+                  @if (client.email) {
+                    <span class="table-secondary">{{ client.email }}</span>
+                  }
+                </td>
+                <td>
+                  <span class="table-primary">{{ client.identificationType }}</span>
+                  <span class="table-secondary numeric">{{ client.identificationNumber }}</span>
+                </td>
+                <td>
+                  <span>{{ client.contactName || 'Sin contacto' }}</span>
+                  @if (client.phone) {
+                    <span class="table-secondary">{{ client.phone }}</span>
+                  }
+                </td>
+                <td>{{ location(client) }}</td>
+                <td>
+                  <span class="status-badge" [class.status-active]="client.active" [class.status-inactive]="!client.active">
+                    {{ client.active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                @if (isAdministrator()) {
+                  <td class="action-cell">
+                    <button class="table-action" type="button" (click)="openEdit(client)">Editar</button>
+                    <button
+                      class="table-action"
+                      type="button"
+                      [disabled]="busyClientId() === client.id"
+                      (click)="toggleActive(client)"
+                    >
+                      {{ busyClientId() === client.id ? 'Actualizando…' : client.active ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="pagination">
+        <span>{{ total() }} clientes · página {{ page() }} de {{ pageCount }}</span>
+        <div class="pagination-actions">
+          <button class="button button-secondary" type="button" [disabled]="page() <= 1" (click)="previousPage()">Anterior</button>
+          <button class="button button-secondary" type="button" [disabled]="page() >= pageCount" (click)="nextPage()">Siguiente</button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>

@@ -1,0 +1,90 @@
+<div class="workspace">
+  @if (menuOpen()) {
+    <button
+      class="sidebar-scrim"
+      type="button"
+      aria-label="Cerrar menú"
+      (click)="closeMenu()"
+    ></button>
+  }
+
+  <aside class="sidebar" [class.sidebar-open]="menuOpen()" aria-label="Navegación principal">
+    <a class="brand-lockup" routerLink="/dashboard" (click)="closeMenu()">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 42 42" fill="none">
+          <path d="M7 12h16a6 6 0 0 1 6 6v12" />
+          <path d="M7 21h7a6 6 0 0 1 6 6v3" />
+          <path d="M7 12v18" />
+          <circle cx="7" cy="12" r="3" />
+          <circle cx="29" cy="30" r="3" />
+        </svg>
+      </span>
+      <span class="brand-name">TEKNOPIPE</span>
+    </a>
+
+    <div class="workspace-label">
+      <span class="workspace-dot" aria-hidden="true"></span>
+      <span>Área comercial</span>
+      <span class="workspace-chevron" aria-hidden="true">⌄</span>
+    </div>
+
+    <nav class="navigation">
+      <p class="navigation-label">Gestión</p>
+      @for (item of visibleNavigation(); track item.path) {
+        <a
+          class="navigation-link"
+          [routerLink]="item.path"
+          routerLinkActive="navigation-link-active"
+          [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+          ariaCurrentWhenActive="page"
+          (click)="closeMenu()"
+        >
+          <app-icon [name]="item.icon" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="support-note">
+        <span class="support-pipe" aria-hidden="true"></span>
+        <p>Gestión ordenada.<br /><strong>Trabajo conectado.</strong></p>
+      </div>
+      <button class="navigation-link logout-link" type="button" (click)="logout()">
+        <app-icon name="logout" />
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-column">
+    <header class="topbar">
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-label="Abrir menú de navegación"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="menuOpen.set(!menuOpen())"
+      >
+        <span></span><span></span><span></span>
+      </button>
+
+      <div class="topbar-context">
+        <span class="topbar-context-dot" aria-hidden="true"></span>
+        <span>Espacio de trabajo</span>
+      </div>
+
+      <div class="user-menu" aria-label="Cuenta activa">
+        <span class="user-avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="user-copy">
+          <strong>{{ auth.user()?.fullName }}</strong>
+          <span>{{ roleLabel() }}</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="page-content" id="main-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
