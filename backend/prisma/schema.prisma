@@ -6,3 +6,223 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum QuotationStatus {
+  BORRADOR
+  PENDIENTE
+  ENVIADA
+  APROBADA
+  RECHAZADA
+  VENCIDA
+
+  @@map("quotation_status")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(32)
+  description String?  @db.VarChar(255)
+  users       User[]
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("roles")
+}
+
+model User {
+  id            String                   @id @default(uuid()) @db.Uuid
+  roleId        String                   @map("role_id") @db.Uuid
+  email         String                   @unique @db.VarChar(320)
+  passwordHash  String                   @map("password_hash") @db.VarChar(255)
+  fullName      String                   @map("full_name") @db.VarChar(160)
+  active        Boolean                  @default(true)
+  role          Role                     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  sessions      UserSession[]
+  quotations    Quotation[]              @relation("QuotationCreator")
+  statusChanges QuotationStatusHistory[] @relation("StatusActor")
+  createdAt     DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([roleId, active])
+  @@map("users")
+}
+
+model UserSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.Char(64)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("user_sessions")
+}
+
+model Client {
+  id                   String      @id @default(uuid()) @db.Uuid
+  identificationType   String      @map("identification_type") @db.VarChar(32)
+  identificationNumber String      @map("identification_number") @db.VarChar(64)
+  legalName            String      @map("legal_name") @db.VarChar(200)
+  contactName          String?     @map("contact_name") @db.VarChar(160)
+  email                String?     @db.VarChar(320)
+  phone                String?     @db.VarChar(40)
+  address              String?     @db.VarChar(240)
+  city                 String?     @db.VarChar(120)
+  department           String?     @db.VarChar(120)
+  active               Boolean     @default(true)
+  quotations           Quotation[]
+  createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([identificationType, identificationNumber])
+  @@index([legalName])
+  @@index([active])
+  @@map("clients")
+}
+
+model Category {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique @db.VarChar(120)
+  description String?   @db.VarChar(500)
+  active      Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("categories")
+}
+
+model Product {
+  id          String          @id @default(uuid()) @db.Uuid
+  categoryId  String?         @map("category_id") @db.Uuid
+  reference   String          @unique @db.VarChar(80)
+  name        String          @db.VarChar(200)
+  description String?         @db.VarChar(1000)
+  unit        String          @db.VarChar(40)
+  unitPrice   Decimal         @map("unit_price") @db.Decimal(14, 2)
+  active      Boolean         @default(true)
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  quoteItems  QuotationItem[]
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([categoryId, active])
+  @@index([name])
+  @@map("products")
+}
+
+model Quotation {
+  id                           String                   @id @default(uuid()) @db.Uuid
+  number                       String                   @unique @db.VarChar(40)
+  clientId                     String                   @map("client_id") @db.Uuid
+  createdById                  String                   @map("created_by_id") @db.Uuid
+  revisionOfId                 String?                  @map("revision_of_id") @db.Uuid
+  revisionNumber               Int                      @default(1) @map("revision_number")
+  status                       QuotationStatus          @default(BORRADOR)
+  issueDate                    DateTime                 @map("issue_date") @db.Date
+  expirationDate               DateTime                 @map("expiration_date") @db.Date
+  clientIdentificationType     String                   @map("client_identification_type") @db.VarChar(32)
+  clientIdentificationSnapshot String                   @map("client_identification_snapshot") @db.VarChar(64)
+  clientNameSnapshot           String                   @map("client_name_snapshot") @db.VarChar(200)
+  clientContactSnapshot        String?                  @map("client_contact_snapshot") @db.VarChar(160)
+  clientEmailSnapshot          String?                  @map("client_email_snapshot") @db.VarChar(320)
+  clientPhoneSnapshot          String?                  @map("client_phone_snapshot") @db.VarChar(40)
+  clientAddressSnapshot        String?                  @map("client_address_snapshot") @db.VarChar(240)
+  clientCitySnapshot           String?                  @map("client_city_snapshot") @db.VarChar(120)
+  clientDepartmentSnapshot     String?                  @map("client_department_snapshot") @db.VarChar(120)
+  currency                     String                   @default("COP") @db.Char(3)
+  taxRate                      Decimal                  @map("tax_rate") @db.Decimal(5, 2)
+  subtotal                     Decimal                  @db.Decimal(14, 2)
+  discountTotal                Decimal                  @default(0) @map("discount_total") @db.Decimal(14, 2)
+  taxTotal                     Decimal                  @map("tax_total") @db.Decimal(14, 2)
+  total                        Decimal                  @db.Decimal(14, 2)
+  observations                 String?                  @db.Text
+  commercialTerms              String?                  @map("commercial_terms") @db.Text
+  client                       Client                   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdBy                    User                     @relation("QuotationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  revisionOf                   Quotation?               @relation("QuotationRevisions", fields: [revisionOfId], references: [id], onDelete: Restrict)
+  revisions                    Quotation[]              @relation("QuotationRevisions")
+  items                        QuotationItem[]
+  statusHistory                QuotationStatusHistory[]
+  createdAt                    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                    DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([revisionOfId, revisionNumber])
+  @@index([status, createdAt])
+  @@index([clientId, createdAt])
+  @@index([createdById, createdAt])
+  @@index([expirationDate, status])
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id               String    @id @default(uuid()) @db.Uuid
+  quotationId      String    @map("quotation_id") @db.Uuid
+  productId        String    @map("product_id") @db.Uuid
+  lineNumber       Int       @map("line_number")
+  productReference String    @map("product_reference_snapshot") @db.VarChar(80)
+  productName      String    @map("product_name_snapshot") @db.VarChar(200)
+  description      String?   @map("description_snapshot") @db.VarChar(1000)
+  unit             String    @map("unit_snapshot") @db.VarChar(40)
+  quantity         Decimal   @db.Decimal(14, 3)
+  unitPrice        Decimal   @map("unit_price") @db.Decimal(14, 2)
+  subtotal         Decimal   @db.Decimal(14, 2)
+  discountAmount   Decimal   @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  taxableBase      Decimal   @map("taxable_base") @db.Decimal(14, 2)
+  taxRate          Decimal   @map("tax_rate") @db.Decimal(5, 2)
+  taxAmount        Decimal   @map("tax_amount") @db.Decimal(14, 2)
+  total            Decimal   @db.Decimal(14, 2)
+  quotation        Quotation @relation(fields: [quotationId], references: [id], onDelete: Restrict)
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([quotationId, lineNumber])
+  @@index([productId])
+  @@map("quotation_items")
+}
+
+model QuotationStatusHistory {
+  id             String           @id @default(uuid()) @db.Uuid
+  quotationId    String           @map("quotation_id") @db.Uuid
+  changedById    String           @map("changed_by_id") @db.Uuid
+  previousStatus QuotationStatus? @map("previous_status")
+  newStatus      QuotationStatus  @map("new_status")
+  observation    String?          @db.VarChar(1000)
+  changedAt      DateTime         @default(now()) @map("changed_at") @db.Timestamptz(3)
+  quotation      Quotation        @relation(fields: [quotationId], references: [id], onDelete: Restrict)
+  changedBy      User             @relation("StatusActor", fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([quotationId, changedAt])
+  @@index([changedById, changedAt])
+  @@map("quotation_status_history")
+}
+
+model CompanySettings {
+  id                  Int      @id @default(1)
+  commercialName      String?  @map("commercial_name") @db.VarChar(200)
+  taxIdentification   String?  @map("tax_identification") @db.VarChar(64)
+  logoUrl             String?  @map("logo_url") @db.VarChar(500)
+  email               String?  @db.VarChar(320)
+  phone               String?  @db.VarChar(40)
+  address             String?  @db.VarChar(240)
+  city                String?  @db.VarChar(120)
+  department          String?  @db.VarChar(120)
+  currency            String   @default("COP") @db.Char(3)
+  taxRate             Decimal  @default(19) @map("tax_rate") @db.Decimal(5, 2)
+  defaultValidityDays Int?     @map("default_validity_days")
+  defaultTerms        String?  @map("default_terms") @db.Text
+  discountsEnabled    Boolean  @default(false) @map("discounts_enabled")
+  quotationPrefix     String   @default("COT") @map("quotation_prefix") @db.VarChar(12)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("company_settings")
+}
+
+model QuotationCounter {
+  year       Int      @id
+  lastNumber Int      @default(0) @map("last_number")
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("quotation_counters")
+}
