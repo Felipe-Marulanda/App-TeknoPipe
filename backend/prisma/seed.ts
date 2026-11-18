@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { newPasswordSchema } from '../src/utils/password.js';
 
 loadEnv({
   path: resolve(dirname(fileURLToPath(import.meta.url)), '../../.env'),
@@ -14,7 +15,7 @@ const seedEnvironment = z
   .object({
     DATABASE_URL: z.url(),
     SEED_ADMIN_EMAIL: z.email().transform((email) => email.trim().toLowerCase()),
-    SEED_ADMIN_PASSWORD: z.string().min(12),
+    SEED_ADMIN_PASSWORD: newPasswordSchema,
     SEED_ADMIN_NAME: z.string().trim().min(1).max(160).default('Administrador inicial'),
   })
   .parse(process.env);
