@@ -1,0 +1,9 @@
+{
+  "name": "@teknopipe/demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "demo": "bash scripts/iniciar-demo.sh",
+    "demo:stop": "bash scripts/detener-demo.sh"
+  }
+}
