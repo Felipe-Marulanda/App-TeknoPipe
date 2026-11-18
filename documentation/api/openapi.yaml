@@ -1,0 +1,687 @@
+openapi: 3.1.0
+info:
+  title: TEKNOPIPE API
+  version: 1.0.0
+  description: API versionada para autenticación, catálogo y seguimiento de cotizaciones.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Entorno local
+tags:
+  - name: Auth
+  - name: Users
+  - name: Clients
+  - name: Categories
+  - name: Products
+  - name: Quotations
+  - name: History
+  - name: Dashboard
+  - name: Reports
+  - name: Settings
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Sesión iniciada; el refresh token se entrega en cookie HttpOnly.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { description: Límite de intentos alcanzado. }
+  /health:
+    get:
+      tags: [Auth]
+      summary: Comprobar disponibilidad de la API
+      responses:
+        '200': { description: API disponible. }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotar la sesión usando la cookie HttpOnly
+      responses:
+        '200': { description: Sesión renovada y cookie rotada. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revocar la sesión actual
+      responses:
+        '200': { description: Sesión revocada. }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Consultar el usuario autenticado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Perfil de usuario. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /users:
+    get:
+      tags: [Users]
+      summary: Listar y filtrar usuarios (solo administrador)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: role, in: query, schema: { type: string, enum: [ADMINISTRADOR, EMPLEADO] } }
+        - { name: active, in: query, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200': { description: Lista paginada de usuarios sin hashes de contraseñas. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Users]
+      summary: Crear usuario (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, fullName, password, role]
+              properties:
+                email: { type: string, format: email }
+                fullName: { type: string }
+                password: { type: string, minLength: 12, maxLength: 72, description: Máximo 72 bytes UTF-8 para bcrypt. }
+                role: { type: string, enum: [ADMINISTRADOR, EMPLEADO] }
+      responses:
+        '201': { description: Usuario creado. }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /users/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Users]
+      summary: Consultar usuario (solo administrador)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Usuario sin hash de contraseña. }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Users]
+      summary: Actualizar usuario (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                email: { type: string, format: email }
+                fullName: { type: string }
+                password: { type: string, minLength: 12, maxLength: 72, description: Máximo 72 bytes UTF-8 para bcrypt. }
+                role: { type: string, enum: [ADMINISTRADOR, EMPLEADO] }
+      responses:
+        '200': { description: Usuario actualizado. }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /users/{id}/status:
+    patch:
+      tags: [Users]
+      summary: Activar o desactivar usuario (solo administrador)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: boolean }
+      responses:
+        '200': { description: Estado actualizado. }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /clients:
+    get:
+      tags: [Clients]
+      summary: Listar y buscar clientes
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: active, in: query, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200': { description: Lista paginada de clientes. }
+    post:
+      tags: [Clients]
+      summary: Registrar cliente
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientInput' }
+      responses:
+        '201': { description: Cliente registrado. }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /clients/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Clients]
+      summary: Consultar cliente
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Cliente consultado. }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Clients]
+      summary: Actualizar cliente (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                identificationType: { type: string, maxLength: 32 }
+                identificationNumber: { type: string, maxLength: 64 }
+                legalName: { type: string, maxLength: 200 }
+                contactName: { type: [string, 'null'], maxLength: 160 }
+                email: { type: [string, 'null'], format: email }
+                phone: { type: [string, 'null'], maxLength: 40 }
+                address: { type: [string, 'null'], maxLength: 240 }
+                city: { type: [string, 'null'], maxLength: 120 }
+                department: { type: [string, 'null'], maxLength: 120 }
+      responses:
+        '200': { description: Cliente actualizado. }
+  /clients/{id}/status:
+    patch:
+      tags: [Clients]
+      summary: Activar o desactivar cliente (solo administrador)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: boolean }
+      responses:
+        '200': { description: Estado actualizado. }
+  /clients/{id}/quotations:
+    get:
+      tags: [Clients]
+      summary: Consultar cotizaciones del cliente según permisos del usuario
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+      responses:
+        '200': { description: Historial paginado y limitado a cotizaciones autorizadas. }
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Listar categorías
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: active, in: query, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200': { description: Lista paginada de categorías. }
+    post:
+      tags: [Categories]
+      summary: Crear categoría (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 120 }
+                description: { type: [string, 'null'], maxLength: 500 }
+      responses:
+        '201': { description: Categoría creada. }
+  /categories/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Categories]
+      summary: Consultar categoría
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Categoría consultada. }
+    put:
+      tags: [Categories]
+      summary: Actualizar categoría (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { type: string, maxLength: 120 }
+                description: { type: [string, 'null'], maxLength: 500 }
+      responses:
+        '200': { description: Categoría actualizada. }
+  /categories/{id}/status:
+    patch:
+      tags: [Categories]
+      summary: Activar o desactivar categoría (solo administrador)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: boolean }
+      responses:
+        '200': { description: Estado actualizado. }
+  /products:
+    get:
+      tags: [Products]
+      summary: Buscar y filtrar productos
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: categoryId, in: query, schema: { type: string, format: uuid } }
+        - { name: active, in: query, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200': { description: Lista paginada de productos con categoría. }
+    post:
+      tags: [Products]
+      summary: Crear producto (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, name, unit, unitPrice]
+              properties:
+                reference: { type: string, maxLength: 80 }
+                name: { type: string, maxLength: 200 }
+                description: { type: [string, 'null'], maxLength: 1000 }
+                categoryId: { type: [string, 'null'], format: uuid }
+                unit: { type: string, maxLength: 40 }
+                unitPrice: { type: string, pattern: '^\d{1,12}(\.\d{1,2})?$' }
+      responses:
+        '201': { description: Producto creado. }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /products/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Products]
+      summary: Consultar producto
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Producto consultado. }
+    put:
+      tags: [Products]
+      summary: Actualizar producto (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                reference: { type: string, maxLength: 80 }
+                name: { type: string, maxLength: 200 }
+                description: { type: [string, 'null'], maxLength: 1000 }
+                categoryId: { type: [string, 'null'], format: uuid }
+                unit: { type: string, maxLength: 40 }
+                unitPrice: { type: string, pattern: '^\d{1,12}(\.\d{1,2})?$' }
+      responses:
+        '200': { description: Producto actualizado sin alterar cotizaciones históricas. }
+  /products/{id}/status:
+    patch:
+      tags: [Products]
+      summary: Activar o desactivar producto (solo administrador)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: boolean }
+      responses:
+        '200': { description: Estado actualizado. }
+  /quotations:
+    get:
+      tags: [Quotations]
+      summary: Listar cotizaciones autorizadas
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { name: status, in: query, schema: { type: string, enum: [BORRADOR, PENDIENTE, ENVIADA, APROBADA, RECHAZADA, VENCIDA] } }
+        - { name: clientId, in: query, schema: { type: string, format: uuid } }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Lista paginada; empleados solo ven sus propias cotizaciones. }
+    post:
+      tags: [Quotations]
+      summary: Crear cotización con precios y cálculo del servidor
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuotationInput' }
+      responses:
+        '201': { description: Cotización borrador persistida con detalles y evento inicial. }
+        '422': { $ref: '#/components/responses/InvalidBusinessData' }
+  /quotations/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Quotations]
+      summary: Consultar cotización y detalles
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Cotización con snapshots, líneas e historial. }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Quotations]
+      summary: Editar cotización en borrador
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuotationInput' }
+      responses:
+        '200': { description: Borrador actualizado y recalculado. }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /quotations/{id}/duplicate:
+    post:
+      tags: [Quotations]
+      summary: Crear una revisión con snapshots y número nuevos
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expirationDate: { type: string, format: date }
+                observations: { type: string, maxLength: 5000 }
+      responses:
+        '201': { description: Nueva revisión en borrador. }
+  /quotations/{id}/status:
+    patch:
+      tags: [Quotations]
+      summary: Cambiar estado mediante una transición válida
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [PENDIENTE, ENVIADA, APROBADA, RECHAZADA, VENCIDA] }
+                observation: { type: string, maxLength: 1000 }
+      responses:
+        '200': { description: Estado e historial persistidos atómicamente. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /quotations/{id}/history:
+    get:
+      tags: [Quotations]
+      summary: Consultar trazabilidad de estados
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200': { description: Historial ordenado con actor y fecha. }
+  /quotations/{id}/pdf:
+    get:
+      tags: [Quotations]
+      summary: Descargar PDF generado desde la cotización persistida
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+      responses:
+        '200':
+          description: Documento PDF con snapshots históricos.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+  /history:
+    get:
+      tags: [History]
+      summary: Buscar historial de cotizaciones con filtros y paginación
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: clientId, in: query, schema: { type: string, format: uuid } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Historial filtrado; empleados ven sus propias cotizaciones. }
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Obtener indicadores y actividad reciente
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Indicadores calculados desde PostgreSQL y limitados por permisos. }
+  /dashboard/quotations-by-month:
+    get:
+      tags: [Dashboard]
+      summary: Obtener conteo y valor cotizado por mes durante 12 meses
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Serie mensual persistida. }
+  /dashboard/quotations-by-status:
+    get:
+      tags: [Dashboard]
+      summary: Obtener cotizaciones agrupadas por estado
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Conteos reales por estado. }
+  /reports/quotations:
+    get:
+      tags: [Reports]
+      summary: Reporte de cotizaciones por periodo, estado, cliente y usuario
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: clientId, in: query, schema: { type: string, format: uuid } }
+        - { name: userId, in: query, schema: { type: string, format: uuid } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv], default: json } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/ReportPageSize' }
+      responses:
+        '200': { description: Reporte JSON paginado o exportación CSV. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /reports/clients:
+    get:
+      tags: [Reports]
+      summary: Reporte de valor y conteo de cotizaciones por cliente
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv], default: json } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/ReportPageSize' }
+      responses:
+        '200': { description: Reporte por cliente. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /reports/users:
+    get:
+      tags: [Reports]
+      summary: Reporte de actividad y valores cotizados por usuario
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: format, in: query, schema: { type: string, enum: [json, csv], default: json } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/ReportPageSize' }
+      responses:
+        '200': { description: Reporte de usuarios. }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /settings:
+    get:
+      tags: [Settings]
+      summary: Consultar configuración empresarial (solo administrador)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Configuración comercial, fiscal y de numeración. }
+    put:
+      tags: [Settings]
+      summary: Actualizar configuración empresarial (solo administrador)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                commercialName: { type: [string, 'null'], maxLength: 200 }
+                taxIdentification: { type: [string, 'null'], maxLength: 64 }
+                logoData: { type: [string, 'null'], description: URI de datos PNG validado, máximo 700000 caracteres. }
+                email: { type: [string, 'null'], format: email }
+                phone: { type: [string, 'null'], maxLength: 40 }
+                address: { type: [string, 'null'], maxLength: 240 }
+                city: { type: [string, 'null'], maxLength: 120 }
+                department: { type: [string, 'null'], maxLength: 120 }
+                currency: { type: string, pattern: '^[A-Z]{3}$' }
+                taxRate: { type: string, pattern: '^\d{1,3}(\.\d{1,2})?$' }
+                defaultValidityDays: { type: [integer, 'null'], minimum: 1, maximum: 365 }
+                defaultTerms: { type: [string, 'null'] }
+                discountsEnabled: { type: boolean }
+                quotationPrefix: { type: string, pattern: '^[A-Z0-9]{2,12}$' }
+      responses:
+        '200': { description: Configuración actualizada. }
+        '422': { $ref: '#/components/responses/InvalidBusinessData' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    ReportPageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+  schemas:
+    ClientInput:
+      type: object
+      required: [identificationType, identificationNumber, legalName]
+      properties:
+        identificationType: { type: string, maxLength: 32 }
+        identificationNumber: { type: string, maxLength: 64 }
+        legalName: { type: string, maxLength: 200 }
+        contactName: { type: [string, 'null'], maxLength: 160 }
+        email: { type: [string, 'null'], format: email }
+        phone: { type: [string, 'null'], maxLength: 40 }
+        address: { type: [string, 'null'], maxLength: 240 }
+        city: { type: [string, 'null'], maxLength: 120 }
+        department: { type: [string, 'null'], maxLength: 120 }
+    ProductInput:
+      type: object
+      required: [reference, name, unit, unitPrice]
+      properties:
+        reference: { type: string, maxLength: 80 }
+        name: { type: string, maxLength: 200 }
+        description: { type: [string, 'null'], maxLength: 1000 }
+        categoryId: { type: [string, 'null'], format: uuid }
+        unit: { type: string, maxLength: 40 }
+        unitPrice: { type: string, pattern: '^\d{1,12}(\.\d{1,2})?$' }
+    QuotationInput:
+      type: object
+      required: [clientId, items]
+      properties:
+        clientId: { type: string, format: uuid }
+        expirationDate: { type: string, format: date }
+        observations: { type: string, maxLength: 5000 }
+        commercialTerms: { type: string, maxLength: 5000 }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            required: [productId, quantity]
+            properties:
+              productId: { type: string, format: uuid }
+              quantity: { type: string, pattern: '^\d{1,11}(\.\d{1,3})?$' }
+              discountAmount: { type: string, pattern: '^\d{1,12}(\.\d{1,2})?$' }
+  responses:
+    Unauthorized:
+      description: No autenticado, token vencido o sesión revocada.
+    Forbidden:
+      description: El usuario no tiene permisos para realizar la operación.
+    NotFound:
+      description: Recurso inexistente o no autorizado.
+    Conflict:
+      description: Conflicto de unicidad, estado o concurrencia.
+    InvalidBusinessData:
+      description: Los datos no cumplen las reglas de negocio.

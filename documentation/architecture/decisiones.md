@@ -56,6 +56,8 @@ ENVIADA   -> APROBADA | RECHAZADA | VENCIDA
 
 `APROBADA`, `RECHAZADA` y `VENCIDA` son estados terminales. Vencer solo se permite cuando la fecha de vencimiento pasó y lo ejecuta una operación explícita del servicio; no se confía en un job no especificado. La emisión registra actor, hora y observación. Se podrá revisar cualquiera de estos estados mediante un nuevo borrador enlazado, nunca cambiando el registro terminado.
 
+Los empleados pueden avanzar sus cotizaciones de `BORRADOR` a `PENDIENTE` y de `PENDIENTE` a `ENVIADA`; solo administradores pueden aprobar, rechazar o marcar vencimiento. Solo se puede editar un borrador. Una revisión crea un nuevo borrador con snapshots originales y número consecutivo, enlazado a la cotización inicial.
+
 **Motivo:** da significado operacional a los seis estados y bloquea saltos arbitrarios.
 
 ## D-007 — Numeración concurrente
@@ -66,7 +68,7 @@ ENVIADA   -> APROBADA | RECHAZADA | VENCIDA
 
 ## D-008 — PDF generado desde cotización persistida
 
-**Decisión:** PDFMake se ejecuta en el backend y obtiene solo la cotización almacenada, incluyendo snapshots. La API entrega `application/pdf`; Angular permite descargarlo. La plantilla usa configuración de empresa y marcadores claramente visibles cuando no se ha configurado información.
+**Decisión:** PDFMake se ejecuta en el backend y obtiene solo la cotización almacenada, incluyendo snapshots. La API entrega `application/pdf`; Angular permite descargarlo. La plantilla usa configuración de empresa y marcadores claramente visibles cuando no se ha configurado información. El logotipo se almacena como PNG embebido en URI de datos, validado por firma, dimensiones y tamaño; se bloquean recursos remotos y acceso a archivos fuera de las fuentes empaquetadas para evitar SSRF y lectura local arbitraria.
 
 **Motivo:** el archivo coincide con el documento histórico y no permite falsificar importes desde el cliente.
 

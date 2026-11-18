@@ -134,7 +134,7 @@ erDiagram
         int id PK
         string commercial_name
         string tax_identification
-        string logo_url
+        text logo_data
         string email
         string phone
         string address
@@ -162,7 +162,7 @@ erDiagram
 - **Quotation:** número único, cliente y usuario obligatorios, valores calculados en backend, estado explícito, tasa e importe capturados, moneda/condiciones y datos del cliente congelados. `revision_of_id` enlaza una nueva cotización con la versión anterior; las originales no se sobrescriben.
 - **QuotationItem:** cada línea conserva referencia, nombre, descripción, unidad, precio, cantidad e impuesto aplicados. `product_id` es referencia al catálogo actual, pero no se usa para reconstruir el documento histórico.
 - **QuotationStatusHistory:** registro de solo inserción para cada transición, incluyendo estado anterior/nuevo, actor, fecha y observación.
-- **CompanySettings:** configuración singleton con valores comerciales y reglas vigentes. Cambios futuros no se propagan a cotizaciones ya creadas.
+- **CompanySettings:** configuración singleton con valores comerciales y reglas vigentes. El logotipo opcional se almacena como URI de datos PNG validado y se limita por bytes y dimensiones. Cambios futuros no se propagan a cotizaciones ya creadas.
 - **QuotationCounter:** contador por año actualizado atómicamente por PostgreSQL para asignar números sin colisiones; los números emitidos no se reutilizan.
 
 ## Integridad, tipos y consultas
