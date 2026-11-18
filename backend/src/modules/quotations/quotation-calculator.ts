@@ -46,7 +46,7 @@ export function calculateQuotation(
     const discountAmount = money(new Decimal(item.discountAmount ?? '0'));
 
     if (
-      !quantity.isPositive() ||
+      !quantity.greaterThan(0) ||
       unitPrice.isNegative() ||
       discountAmount.isNegative() ||
       discountAmount.greaterThan(subtotal) ||

@@ -105,6 +105,24 @@ it('creates a quote from server prices, preserves snapshots, and checks state tr
   const accessToken = login.body.data.accessToken as string;
   const expirationDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
+  const emptyQuotation = await request(app)
+    .post('/api/v1/quotations')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ clientId, expirationDate, items: [] });
+  expect(emptyQuotation.status).toBe(400);
+
+  const zeroQuantity = await request(app)
+    .post('/api/v1/quotations')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ clientId, expirationDate, items: [{ productId, quantity: '0' }] });
+  expect(zeroQuantity.status).toBe(400);
+
+  const malformedQuantity = await request(app)
+    .post('/api/v1/quotations')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ clientId, expirationDate, items: [{ productId, quantity: '1.2345' }] });
+  expect(malformedQuantity.status).toBe(400);
+
   const created = await request(app)
     .post('/api/v1/quotations')
     .set('Authorization', `Bearer ${accessToken}`)
@@ -128,6 +146,12 @@ it('creates a quote from server prices, preserves snapshots, and checks state tr
   expect(created.body.data.items[0].productName).toBe('Producto de cotización');
   expect(created.body.data.items[1].productName).toBe('Segundo producto de cotización');
   expect(created.body.data.statusHistory).toHaveLength(1);
+
+  const invalidTransition = await request(app)
+    .patch(`/api/v1/quotations/${quotationId}/status`)
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ status: 'APROBADA' });
+  expect(invalidTransition.status).toBe(409);
 
   const edited = await request(app)
     .put(`/api/v1/quotations/${quotationId}`)

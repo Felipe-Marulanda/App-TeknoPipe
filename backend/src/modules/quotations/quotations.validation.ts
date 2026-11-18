@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-const quantitySchema = z.string().regex(/^\d{1,11}(\.\d{1,3})?$/);
+const quantitySchema = z
+  .string()
+  .regex(/^\d{1,11}(\.\d{1,3})?$/)
+  .refine((quantity) => Number(quantity) > 0);
 const amountSchema = z.string().regex(/^\d{1,12}(\.\d{1,2})?$/);
 
 export const quotationCreateSchema = z.object({
