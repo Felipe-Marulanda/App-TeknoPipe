@@ -83,3 +83,16 @@ Los empleados pueden avanzar sus cotizaciones de `BORRADOR` a `PENDIENTE` y de `
 **Decisión:** Zod para entorno y entradas HTTP; pruebas unitarias de dominio, integración contra PostgreSQL y pruebas de UI/API según las herramientas compatibles seleccionadas en Fase 2.
 
 **Motivo:** valida límites en el servidor y evita depender de mocks para afirmar persistencia.
+
+## D-011 — Presupuestos de estilos Angular
+
+**Decisión:** conservar el límite de advertencia de 4 kB y el límite de error de 8 kB por hoja de componente. No se elevará el presupuesto para silenciar advertencias. La última compilación de producción pasa, con estas hojas sobre el umbral de advertencia:
+
+| Hoja                                                                   |  Tamaño | Exceso sobre 4 kB |
+| ---------------------------------------------------------------------- | ------: | ----------------: |
+| `frontend/src/app/features/auth/login.component.scss`                  | 4.26 kB |           0.26 kB |
+| `frontend/src/app/layout/app-shell.component.scss`                     | 4.38 kB |           0.38 kB |
+| `frontend/src/app/features/quotations/quotation-detail.component.scss` | 5.54 kB |           1.54 kB |
+| `frontend/src/app/features/dashboard/dashboard.component.scss`         | 7.23 kB |           3.23 kB |
+
+**Motivo:** reducirlas requiere extraer estilos y validar el impacto visual entre pantallas. Se conserva el límite de compilación y se revisarán al modificar estas vistas, evitando refactors de CSS sin verificación visual.
