@@ -50,7 +50,7 @@ Sistema web para administrar clientes, catálogo, cotizaciones, estados, histori
    npm run dev
    ```
 
-   La API queda en `http://localhost:3000`; comprueba `http://localhost:3000/api/v1/health`.
+   La API queda en `http://localhost:3000`; comprueba `http://localhost:3000/api/v1/health` y abre Swagger UI en `http://localhost:3000/api-docs/`.
 
 6. En otra terminal, inicia Angular:
 

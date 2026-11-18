@@ -15,7 +15,7 @@ API --red privada--> PostgreSQL
 ## Preparación
 
 1. Construye Angular desde `frontend/` con `npm ci` y `npm run build`; publica `dist/frontend/browser` en el servidor web.
-2. En el backend, instala dependencias con `npm ci`, ejecuta `npm run prisma:generate` y `npm run build`.
+2. En el backend, instala dependencias con `npm ci`, ejecuta `npm run prisma:generate` y `npm run build`. Incluye el archivo `documentation/api/openapi.yaml` en la distribución del backend para servir Swagger UI en `/api-docs/`.
 3. Proporciona al proceso variables seguras: `NODE_ENV=production`, `PORT`, `DATABASE_URL`, `CORS_ORIGIN`, `JWT_ACCESS_SECRET` y las variables `SEED_ADMIN_*` solo durante la inicialización requerida.
 4. Antes de poner la API en servicio, ejecuta `npm run prisma:deploy` para aplicar las migraciones versionadas. Ejecuta `npm run prisma:seed` en la primera instalación; conserva las credenciales iniciales de forma segura y rota la contraseña después.
 5. Ejecuta `npm start` con un supervisor de procesos. Expón únicamente el proxy/API; no publiques el puerto PostgreSQL.

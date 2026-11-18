@@ -1,6 +1,6 @@
 # Guía de la API
 
-El contrato completo, con métodos, parámetros, cuerpos y respuestas por endpoint, está en [`openapi.yaml`](./openapi.yaml). La base es `/api/v1`; el servidor local usa `http://localhost:3000/api/v1`.
+El contrato completo, con métodos, parámetros, cuerpos y respuestas por endpoint, está en [`openapi.yaml`](./openapi.yaml). Durante la ejecución del backend, Swagger UI está disponible en `/api-docs/` y el YAML en `/api-docs/openapi.yaml`. La base es `/api/v1`; el servidor local usa `http://localhost:3000/api/v1`.
 
 ## Autenticación
 
