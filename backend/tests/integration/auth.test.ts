@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import bcrypt from 'bcrypt';
+import { SignJWT } from 'jose';
 import request from 'supertest';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import app from '../../src/app.js';
@@ -56,6 +57,20 @@ it('login, consulta, rota y revoca una sesión', async () => {
     .set('Authorization', 'Bearer token.falsificado');
   expect(forged.status).toBe(401);
 
+  const now = Math.floor(Date.now() / 1000);
+  const expiredToken = await new SignJWT({ role: 'ADMINISTRADOR' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject(userId!)
+    .setIssuer('teknopipe-api')
+    .setAudience('teknopipe-web')
+    .setIssuedAt(now - 120)
+    .setExpirationTime(now - 60)
+    .sign(new TextEncoder().encode(env.JWT_ACCESS_SECRET));
+  const expired = await request(app)
+    .get('/api/v1/auth/me')
+    .set('Authorization', `Bearer ${expiredToken}`);
+  expect(expired.status).toBe(401);
+
   const untrustedOrigin = await request(app)
     .post('/api/v1/auth/refresh')
     .set('Origin', 'https://sitio-no-autorizado.example');
@@ -100,4 +115,14 @@ it('login, consulta, rota y revoca una sesión', async () => {
     .set('Origin', env.CORS_ORIGIN)
     .set('Cookie', rotatedCookie);
   expect(revoked.status).toBe(401);
+
+  const failedLogins = [];
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    failedLogins.push(
+      await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: `missing-${attempt}@example.test`, password }),
+    );
+  }
+  expect(failedLogins.some((response) => response.status === 429)).toBe(true);
 });
