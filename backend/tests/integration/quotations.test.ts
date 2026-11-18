@@ -13,8 +13,15 @@ let productId: string | undefined;
 let secondProductId: string | undefined;
 let quotationId: string | undefined;
 let duplicateId: string | undefined;
+let previousTaxRate: string | undefined;
 
 beforeAll(async () => {
+  const settings = await prisma.companySettings.findUniqueOrThrow({ where: { id: 1 } });
+  previousTaxRate = settings.taxRate.toString();
+  if (previousTaxRate !== '19') {
+    await prisma.companySettings.update({ where: { id: 1 }, data: { taxRate: '19' } });
+  }
+
   const role = await prisma.role.upsert({
     where: { name: 'EMPLEADO' },
     update: {},
@@ -82,6 +89,12 @@ afterAll(async () => {
   }
   if (userId) {
     await prisma.user.delete({ where: { id: userId } });
+  }
+  if (previousTaxRate && previousTaxRate !== '19') {
+    await prisma.companySettings.update({
+      where: { id: 1 },
+      data: { taxRate: previousTaxRate },
+    });
   }
   await prisma.$disconnect();
 });
