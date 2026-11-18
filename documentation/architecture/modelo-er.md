@@ -1,6 +1,6 @@
-# Modelo entidad-relación inicial
+# Modelo entidad-relación
 
-El modelo conserva los datos históricos de las cotizaciones aunque el catálogo o los datos de contacto cambien. Los nombres son conceptuales; los tipos y convenciones definitivos se expresarán en `schema.prisma` durante la Fase 3.
+El modelo conserva los datos históricos de las cotizaciones aunque el catálogo o los datos de contacto cambien. La implementación versionada está en [`schema.prisma`](../../backend/prisma/schema.prisma) y su migración inicial en `backend/prisma/migrations/`.
 
 ```mermaid
 erDiagram
@@ -41,7 +41,7 @@ erDiagram
     CLIENTS {
         uuid id PK
         string identification_type
-        string identification_number UK
+        string identification_number
         string legal_name
         string contact_name
         string email
@@ -78,10 +78,20 @@ erDiagram
         uuid client_id FK
         uuid created_by_id FK
         uuid revision_of_id FK
+        int revision_number
         string number UK
         string status
         date issue_date
         date expiration_date
+        string client_identification_type
+        string client_name_snapshot
+        string client_identification_snapshot
+        string client_contact_snapshot
+        string client_email_snapshot
+        string client_phone_snapshot
+        string client_address_snapshot
+        string client_city_snapshot
+        string client_department_snapshot
         decimal tax_rate
         decimal subtotal
         decimal discount_total
@@ -97,17 +107,19 @@ erDiagram
         uuid id PK
         uuid quotation_id FK
         uuid product_id FK
+        int line_number
         string product_reference_snapshot
         string product_name_snapshot
         string description_snapshot
         string unit_snapshot
         decimal quantity
         decimal unit_price
-        decimal discount
+        decimal subtotal
+        decimal discount_amount
+        decimal taxable_base
         decimal tax_rate
-        decimal line_subtotal
-        decimal line_tax
-        decimal line_total
+        decimal tax_amount
+        decimal total
     }
     QUOTATION_STATUS_HISTORY {
         uuid id PK
@@ -134,18 +146,24 @@ erDiagram
         string quotation_prefix
         datetime updated_at
     }
+    QUOTATION_COUNTERS {
+        int year PK
+        int last_number
+        datetime updated_at
+    }
 ```
 
 ## Entidades y reglas
 
 - **Role / User:** roles únicos `ADMINISTRADOR` y `EMPLEADO`; usuario con correo normalizado único, hash de contraseña, estado activo y rol requerido. El primer administrador se crea por seed controlado, sin registro público.
 - **UserSession:** extensión necesaria para revocar sesiones y renovar tokens. Solo almacena el hash del token de renovación, su vencimiento y revocación.
-- **Client:** identificación normalizada y única. Desactivación lógica; no se elimina si tiene cotizaciones relacionadas.
+- **Client:** identificación normalizada y única por tipo y número. Desactivación lógica; no se elimina si tiene cotizaciones relacionadas.
 - **Category / Product:** referencia/código único; precio no negativo; producto asociado opcionalmente a categoría. Las asociaciones históricas no autorizan usar productos inactivos en cotizaciones nuevas.
-- **Quotation:** número único, cliente y usuario obligatorios, valores calculados en backend, estado explícito, tasa e importe capturados, moneda y condiciones congeladas. `revision_of_id` enlaza una nueva cotización con la versión anterior; las originales no se sobrescriben.
+- **Quotation:** número único, cliente y usuario obligatorios, valores calculados en backend, estado explícito, tasa e importe capturados, moneda/condiciones y datos del cliente congelados. `revision_of_id` enlaza una nueva cotización con la versión anterior; las originales no se sobrescriben.
 - **QuotationItem:** cada línea conserva referencia, nombre, descripción, unidad, precio, cantidad e impuesto aplicados. `product_id` es referencia al catálogo actual, pero no se usa para reconstruir el documento histórico.
 - **QuotationStatusHistory:** registro de solo inserción para cada transición, incluyendo estado anterior/nuevo, actor, fecha y observación.
 - **CompanySettings:** configuración singleton con valores comerciales y reglas vigentes. Cambios futuros no se propagan a cotizaciones ya creadas.
+- **QuotationCounter:** contador por año actualizado atómicamente por PostgreSQL para asignar números sin colisiones; los números emitidos no se reutilizan.
 
 ## Integridad, tipos y consultas
 
@@ -154,6 +172,6 @@ erDiagram
 - Índices/únicos en correo de usuario, identificación de cliente, referencia de producto, nombre de categoría y número/estado/fechas/cliente/creador de cotización.
 - Índices compuestos para listado paginado y filtrado de cotizaciones (estado, fecha y creador) y búsqueda normalizada por cliente.
 - `created_at` y `updated_at` en registros editables; historial append-only para cambios de estado.
-- Integridad adicional: cantidad positiva, precio/tasa/descuento no negativos, vencimiento no anterior a elaboración, y cotización con al menos una línea.
+- La migración agrega `CHECK` de email normalizado, valores requeridos, importes/descuentos/tasas, fechas, vigencia de configuración y contador positivo. La API además exige al menos una línea por cotización.
 - Crear una cotización junto a sus detalles e historial inicial dentro de una transacción. Actualizaciones de estado y su historial también son atómicas.
 - La migración de base de datos será versionada; no se usará `db push` como sustituto de migraciones en entornos compartidos.
