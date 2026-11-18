@@ -2,6 +2,10 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import { errorHandler } from './middlewares/error-handler.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
@@ -40,6 +44,26 @@ app.use('/api/v1', pdfRoutes);
 app.use('/api/v1/history', historyRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/reports', reportsRoutes);
+
+const openApiFile = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../documentation/api/openapi.yaml',
+);
+app.get('/api-docs/openapi.yaml', async (_request, response, next) => {
+  try {
+    response.type('application/yaml').send(await readFile(openApiFile, 'utf8'));
+  } catch (error) {
+    next(error);
+  }
+});
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(null, {
+    explorer: true,
+    swaggerOptions: { url: '/api-docs/openapi.yaml', validatorUrl: null },
+  }),
+);
 
 app.get('/api/v1/health', (_request, response) => {
   response.status(200).json({

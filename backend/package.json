@@ -34,6 +34,7 @@
     "jose": "6.2.17",
     "pdfmake": "0.3.14",
     "pg": "8.23.1",
+    "swagger-ui-express": "5.0.1",
     "zod": "4.6.7"
   },
   "devDependencies": {
@@ -46,6 +47,7 @@
     "@types/pdfmake": "0.3.3",
     "@types/pg": "8.23.1",
     "@types/supertest": "7.2.1",
+    "@types/swagger-ui-express": "4.1.8",
     "eslint": "10.15.0",
     "globals": "17.14.0",
     "prettier": "3.10.1",

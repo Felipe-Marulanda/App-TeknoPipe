@@ -4,8 +4,8 @@ info:
   version: 1.0.0
   description: API versionada para autenticación, catálogo y seguimiento de cotizaciones.
 servers:
-  - url: http://localhost:3000/api/v1
-    description: Entorno local
+  - url: /api/v1
+    description: API en el mismo origen del servidor de documentación
 tags:
   - name: Auth
   - name: Users
