@@ -10,6 +10,7 @@ const password = randomBytes(24).toString('base64url');
 let userId: string | undefined;
 let clientId: string | undefined;
 let productId: string | undefined;
+let secondProductId: string | undefined;
 let quotationId: string | undefined;
 let duplicateId: string | undefined;
 
@@ -47,6 +48,16 @@ beforeAll(async () => {
     },
   });
   productId = product.id;
+
+  const secondProduct = await prisma.product.create({
+    data: {
+      reference: `TEST-${randomUUID()}`,
+      name: 'Segundo producto de cotización',
+      unit: 'unidad',
+      unitPrice: '2250.25',
+    },
+  });
+  secondProductId = secondProduct.id;
 });
 
 afterAll(async () => {
@@ -62,6 +73,9 @@ afterAll(async () => {
   }
   if (productId) {
     await prisma.product.delete({ where: { id: productId } });
+  }
+  if (secondProductId) {
+    await prisma.product.delete({ where: { id: secondProductId } });
   }
   if (clientId) {
     await prisma.client.delete({ where: { id: clientId } });
@@ -84,15 +98,22 @@ it('creates a quote from server prices, preserves snapshots, and checks state tr
     .send({
       clientId,
       expirationDate,
-      items: [{ productId, quantity: '2' }],
+      items: [
+        { productId, quantity: '2' },
+        { productId: secondProductId, quantity: '3' },
+      ],
     });
 
   if (created.status === 201) {
     quotationId = created.body.data.id as string;
   }
   expect(created.status, JSON.stringify(created.body)).toBe(201);
-  expect(created.body.data.subtotal).toBe('2000');
+  expect(created.body.data.subtotal).toBe('8750.75');
+  expect(created.body.data.taxTotal).toBe('1662.64');
+  expect(created.body.data.total).toBe('10413.39');
+  expect(created.body.data.items).toHaveLength(2);
   expect(created.body.data.items[0].productName).toBe('Producto de cotización');
+  expect(created.body.data.items[1].productName).toBe('Segundo producto de cotización');
   expect(created.body.data.statusHistory).toHaveLength(1);
 
   const edited = await request(app)
@@ -101,7 +122,10 @@ it('creates a quote from server prices, preserves snapshots, and checks state tr
     .send({
       clientId,
       expirationDate,
-      items: [{ productId, quantity: '2' }],
+      items: [
+        { productId, quantity: '2' },
+        { productId: secondProductId, quantity: '3' },
+      ],
       observations: 'Ajuste de borrador',
     });
   expect(edited.status).toBe(200);
