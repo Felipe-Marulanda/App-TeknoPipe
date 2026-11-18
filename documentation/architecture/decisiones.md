@@ -1,6 +1,16 @@
 # Decisiones técnicas
 
-Las decisiones derivan de los requisitos del proyecto. Las versiones concretas de paquetes se fijarán en la Fase 2 después de verificar compatibilidad entre versiones estables disponibles, Angular, Node y Prisma.
+Las decisiones derivan de los requisitos del proyecto. La línea base de versiones se seleccionó en Fase 2 verificando disponibilidad estable y compatibilidad entre Angular, Node y Prisma.
+
+## Línea base validada en Fase 2
+
+- Node.js `26.8.1` y npm `11.19.0`, presentes en el entorno.
+- Angular `22.2.6`, CLI/build `22.2.7`, Material/CDK `22.3.0`, TypeScript `6.0.3` y RxJS `7.8.2`. El compilador Angular requiere TypeScript `>=6.0 <6.1`; por eso no se usa TypeScript 7 aunque exista una versión más nueva.
+- Express `5.3.0`, Prisma/Client/adapter PostgreSQL `7.10.1`, `pg` `8.23.1`, Zod `4.6.7`, Vitest `5.1.1` y PDFMake `0.3.14`, además de middleware y herramientas fijados en sus manifests/lockfiles.
+- PostgreSQL `17-alpine` en Docker Compose, con volumen persistente, puerto enlazado solo a loopback y healthcheck.
+- Prisma `8.0.0-rc.34` era la etiqueta `latest` consultada, no una versión estable; se seleccionó `7.10.1`.
+
+Las versiones instaladas pasaron compilación, lint, pruebas y `npm audit` sin vulnerabilidades reportadas en esta línea base.
 
 ## D-001 — Monolito modular con API REST
 
