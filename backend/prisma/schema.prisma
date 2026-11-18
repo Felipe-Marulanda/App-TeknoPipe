@@ -202,7 +202,7 @@ model CompanySettings {
   id                  Int      @id @default(1)
   commercialName      String?  @map("commercial_name") @db.VarChar(200)
   taxIdentification   String?  @map("tax_identification") @db.VarChar(64)
-  logoUrl             String?  @map("logo_url") @db.VarChar(500)
+  logoData            String?  @map("logo_data") @db.Text
   email               String?  @db.VarChar(320)
   phone               String?  @db.VarChar(40)
   address             String?  @db.VarChar(240)
