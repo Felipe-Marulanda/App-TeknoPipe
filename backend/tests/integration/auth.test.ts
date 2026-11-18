@@ -48,6 +48,19 @@ afterAll(async () => {
 });
 
 it('login, consulta, rota y revoca una sesión', async () => {
+  const anonymous = await request(app).get('/api/v1/auth/me');
+  expect(anonymous.status).toBe(401);
+
+  const forged = await request(app)
+    .get('/api/v1/auth/me')
+    .set('Authorization', 'Bearer token.falsificado');
+  expect(forged.status).toBe(401);
+
+  const untrustedOrigin = await request(app)
+    .post('/api/v1/auth/refresh')
+    .set('Origin', 'https://sitio-no-autorizado.example');
+  expect(untrustedOrigin.status).toBe(403);
+
   const login = await request(app).post('/api/v1/auth/login').send({ email, password });
 
   expect(login.status).toBe(200);
