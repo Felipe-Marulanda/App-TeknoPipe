@@ -17,6 +17,7 @@ Thumbs.db
 .vscode/
 .agents/
 skills-lock.json
+backend/src/generated/
 .claude/
 .cursor/
 .windsurf/
