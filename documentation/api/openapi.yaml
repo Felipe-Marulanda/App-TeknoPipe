@@ -450,7 +450,7 @@ paths:
   /quotations/{id}/status:
     patch:
       tags: [Quotations]
-      summary: Cambiar estado mediante una transición válida
+      summary: Cambiar estado mediante una transición válida y autorizada por rol
       security: [{ bearerAuth: [] }]
       parameters:
         - { $ref: '#/components/parameters/Id' }
@@ -462,10 +462,11 @@ paths:
               type: object
               required: [status]
               properties:
-                status: { type: string, enum: [PENDIENTE, ENVIADA, APROBADA, RECHAZADA, VENCIDA] }
-                observation: { type: string, maxLength: 1000 }
+                status: { type: string, enum: [BORRADOR, PENDIENTE, ENVIADA, APROBADA, RECHAZADA, VENCIDA] }
+                observation: { type: string, minLength: 1, maxLength: 1000, description: Obligatoria al devolver de PENDIENTE a BORRADOR. }
       responses:
         '200': { description: Estado e historial persistidos atómicamente. }
+        '400': { description: Solicitud inválida u observación de devolución faltante. }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
   /quotations/{id}/history:

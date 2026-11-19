@@ -32,9 +32,10 @@ Las transiciones válidas están restringidas por el backend:
 BORRADOR → PENDIENTE → ENVIADA → APROBADA
                                  ↘ RECHAZADA
 PENDIENTE o ENVIADA → VENCIDA (cuando ya pasó la vigencia)
+PENDIENTE → BORRADOR (administrador, con observación)
 ```
 
-Un empleado puede enviar sus cotizaciones en el flujo permitido. La aprobación, rechazo y vencimiento requieren permisos de administrador. Cada transición guarda el estado anterior y nuevo, actor, fecha y observación. Solo los borradores pueden editarse. Para cambiar una cotización ya emitida, crea una revisión; queda como nuevo borrador enlazado a su antecedente.
+El empleado puede pasar sus borradores a pendientes. Solo el administrador puede marcar una pendiente como enviada o devolverla a borrador; para devolverla debe indicar una observación. La aprobación, rechazo y vencimiento pueden realizarlos el empleado o administrador que tenga acceso a esa cotización. Cada transición guarda el estado anterior y nuevo, actor, fecha y, cuando se indica, la observación. Solo los borradores pueden editarse. Para cambiar una cotización ya emitida, crea una revisión; queda como nuevo borrador enlazado a su antecedente.
 
 ## Historial, dashboard y reportes
 

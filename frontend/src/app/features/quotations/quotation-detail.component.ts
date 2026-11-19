@@ -72,17 +72,25 @@ export class QuotationDetailComponent implements OnInit {
     return Number(quote.discountTotal) > 0;
   }
 
-  changeStatus(status: QuotationStatus): void {
+  changeStatus(status: QuotationStatus, observation?: string): void {
     this.busyAction.set('status');
     this.actionError.set('');
     this.api
-      .patch<ApiResponse<Quotation>>(`/quotations/${this.id}/status`, { status })
+      .patch<ApiResponse<Quotation>>(`/quotations/${this.id}/status`, {
+        status,
+        ...(observation !== undefined ? { observation } : {}),
+      })
       .pipe(finalize(() => this.busyAction.set(null)))
       .subscribe({
         next: () => this.loadQuotation(),
         error: (error: unknown) =>
           this.actionError.set(apiErrorMessage(error, 'No se pudo actualizar el estado.')),
       });
+  }
+
+  returnToDraft(): void {
+    const observation = window.prompt('Indica por qué se devuelve la cotización a borrador:')?.trim();
+    if (observation) this.changeStatus('BORRADOR', observation);
   }
 
   duplicate(): void {

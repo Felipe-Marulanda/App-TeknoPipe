@@ -34,8 +34,8 @@ export const quotationListSchema = z.object({
 });
 
 export const quotationStatusSchema = z.object({
-  status: z.enum(['PENDIENTE', 'ENVIADA', 'APROBADA', 'RECHAZADA', 'VENCIDA']),
-  observation: z.string().trim().max(1000).optional(),
+  status: z.enum(['BORRADOR', 'PENDIENTE', 'ENVIADA', 'APROBADA', 'RECHAZADA', 'VENCIDA']),
+  observation: z.string().trim().min(1).max(1000).optional(),
 });
 
 export const quotationDuplicateSchema = z.object({

@@ -38,16 +38,17 @@
           <button class="button button-primary" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('PENDIENTE')">
             {{ busyAction() === 'status' ? 'Actualizando…' : 'Enviar a revisión' }}
           </button>
-        } @else if (quote.status === 'PENDIENTE') {
+        } @else if (isAdministrator && quote.status === 'PENDIENTE') {
           <button class="button button-primary" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('ENVIADA')">
             {{ busyAction() === 'status' ? 'Actualizando…' : 'Marcar como enviada' }}
           </button>
+          <button class="button button-secondary" type="button" [disabled]="busyAction() !== null" (click)="returnToDraft()">Devolver a borrador</button>
         }
-        @if (isAdministrator && quote.status === 'ENVIADA') {
+        @if (quote.status === 'ENVIADA') {
           <button class="button button-approve" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('APROBADA')">Aprobar</button>
           <button class="button button-reject" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('RECHAZADA')">Rechazar</button>
         }
-        @if (isAdministrator && canExpire()) {
+        @if (canExpire()) {
           <button class="button button-secondary" type="button" [disabled]="busyAction() !== null" (click)="changeStatus('VENCIDA')">Marcar vencida</button>
         }
       </div>

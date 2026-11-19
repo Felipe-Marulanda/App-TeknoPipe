@@ -450,7 +450,7 @@ export const quotationsService = {
 
       const allowed: Record<QuotationStatus, QuotationStatus[]> = {
         BORRADOR: ['PENDIENTE'],
-        PENDIENTE: ['ENVIADA', 'VENCIDA'],
+        PENDIENTE: ['BORRADOR', 'ENVIADA', 'VENCIDA'],
         ENVIADA: ['APROBADA', 'RECHAZADA', 'VENCIDA'],
         APROBADA: [],
         RECHAZADA: [],
@@ -463,8 +463,23 @@ export const quotationsService = {
           'La transición de estado no está permitida.',
         );
       }
-      if (['APROBADA', 'RECHAZADA', 'VENCIDA'].includes(status) && user.role !== 'ADMINISTRADOR') {
-        throw new AppError(403, 'FORBIDDEN', 'Solo un administrador puede cerrar la cotización.');
+      if (
+        quotation.status === 'PENDIENTE' &&
+        ['ENVIADA', 'BORRADOR'].includes(status) &&
+        user.role !== 'ADMINISTRADOR'
+      ) {
+        throw new AppError(
+          403,
+          'FORBIDDEN',
+          'Solo un administrador puede enviar o devolver una cotización pendiente.',
+        );
+      }
+      if (quotation.status === 'PENDIENTE' && status === 'BORRADOR' && !observation?.trim()) {
+        throw new AppError(
+          400,
+          'OBSERVATION_REQUIRED',
+          'Indica una observación para devolver la cotización a borrador.',
+        );
       }
       if (
         status === 'VENCIDA' &&
