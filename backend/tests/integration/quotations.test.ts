@@ -6,8 +6,10 @@ import app from '../../src/app.js';
 import { prisma } from '../../src/config/prisma.js';
 
 const email = `quotation-${randomUUID()}@example.test`;
+const adminEmail = `quotation-admin-${randomUUID()}@example.test`;
 const password = randomBytes(24).toString('base64url');
 let userId: string | undefined;
+let adminId: string | undefined;
 let clientId: string | undefined;
 let productId: string | undefined;
 let secondProductId: string | undefined;
@@ -36,6 +38,21 @@ beforeAll(async () => {
     },
   });
   userId = user.id;
+
+  const adminRole = await prisma.role.upsert({
+    where: { name: 'ADMINISTRADOR' },
+    update: {},
+    create: { name: 'ADMINISTRADOR', description: 'Acceso general al sistema' },
+  });
+  const admin = await prisma.user.create({
+    data: {
+      email: adminEmail,
+      fullName: 'Administración de cotizaciones',
+      passwordHash: await bcrypt.hash(password, 8),
+      roleId: adminRole.id,
+    },
+  });
+  adminId = admin.id;
 
   const client = await prisma.client.create({
     data: {
@@ -89,6 +106,9 @@ afterAll(async () => {
   }
   if (userId) {
     await prisma.user.delete({ where: { id: userId } });
+  }
+  if (adminId) {
+    await prisma.user.delete({ where: { id: adminId } });
   }
   if (previousTaxRate && previousTaxRate !== '19') {
     await prisma.companySettings.update({
@@ -240,17 +260,47 @@ it('creates a quote from server prices, preserves snapshots, and checks state tr
   expect(history.body.data).toHaveLength(2);
   expect(history.body.data[1].newStatus).toBe('PENDIENTE');
 
-  const sent = await request(app)
+  const adminLogin = await request(app).post('/api/v1/auth/login').send({ email: adminEmail, password });
+  expect(adminLogin.status).toBe(200);
+  const adminToken = adminLogin.body.data.accessToken as string;
+
+  const returnWithoutObservation = await request(app)
+    .patch(`/api/v1/quotations/${quotationId}/status`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ status: 'BORRADOR' });
+  expect(returnWithoutObservation.status).toBe(400);
+
+  const returned = await request(app)
+    .patch(`/api/v1/quotations/${quotationId}/status`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ status: 'BORRADOR', observation: 'Ajustar cantidades solicitadas.' });
+  expect(returned.status).toBe(200);
+  expect(returned.body.data.status).toBe('BORRADOR');
+
+  const resubmitted = await request(app)
+    .patch(`/api/v1/quotations/${quotationId}/status`)
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ status: 'PENDIENTE' });
+  expect(resubmitted.status).toBe(200);
+
+  const employeeSend = await request(app)
     .patch(`/api/v1/quotations/${quotationId}/status`)
     .set('Authorization', `Bearer ${accessToken}`)
     .send({ status: 'ENVIADA' });
-  expect(sent.status).toBe(200);
+  expect(employeeSend.status).toBe(403);
 
-  const skippedState = await request(app)
+  const adminSend = await request(app)
+    .patch(`/api/v1/quotations/${quotationId}/status`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ status: 'ENVIADA' });
+  expect(adminSend.status).toBe(200);
+  expect(adminSend.body.data.status).toBe('ENVIADA');
+
+  const employeeApproval = await request(app)
     .patch(`/api/v1/quotations/${quotationId}/status`)
     .set('Authorization', `Bearer ${accessToken}`)
     .send({ status: 'APROBADA' });
-  expect(skippedState.status).toBe(403);
+  expect(employeeApproval.status).toBe(200);
 
   const duplicate = await request(app)
     .post(`/api/v1/quotations/${quotationId}/duplicate`)
